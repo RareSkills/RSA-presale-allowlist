@@ -26,4 +26,17 @@ describe("RSA presale allowlist", function () {
             expect(tokenName).to.equal("TestToken");
         });
     });
+
+    describe("RSA Lib", function () {
+        // This test will fail as features are implemented
+        it("Lib is connected to TestToken (hard coded values)", async function () {
+            const { testToken, owner, user1 } = await loadFixture(deployFixture);
+            
+            await testToken.connect(owner).mint(user1.address, 5000);
+
+            const user1Balance = await testToken.balanceOf(user1.address);
+
+            expect(user1Balance).to.equal(5000);
+        });
+    });
 });

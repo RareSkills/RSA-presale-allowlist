@@ -5,7 +5,12 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract TestToken is ERC20, Ownable {
-    constructor() ERC20("TestToken", "TST") {}
+
+    address immutable pkAddress;
+
+    constructor(address _pkAddress) ERC20("TestToken", "TST") {
+        pkAddress = _pkAddress;
+    }
 
     function mint(address to, uint256 amount) public onlyOwner {
         _mint(to, amount);

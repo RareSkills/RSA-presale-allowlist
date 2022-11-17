@@ -15,7 +15,17 @@ describe("RSA presale allowlist", function () {
         const TestTokenFactory = await ethers.getContractFactory("TestToken");
         const testToken = await TestTokenFactory.deploy(ZERO_ADDRESS);
 
-        return { testToken, owner, user1 };
+        const KeyStoreFactory = await ethers.getContractFactory("KeyStore");
+        const keyStore = await KeyStoreFactory.deploy();
+        
+        /**
+         * This will need to be renamed. It is currently being used as a 
+         * general utility contract for testing ideas.
+         */
+        const ContractFactory = await ethers.getContractFactory("Contract");
+        const contract = await ContractFactory.deploy();
+
+        return { testToken, keyStore, contract, owner, user1 };
     }
 
     describe("Deployment", function () {
@@ -24,6 +34,17 @@ describe("RSA presale allowlist", function () {
             const tokenName = await testToken.name();
 
             expect(tokenName).to.equal("TestToken");
+        });
+    });
+
+    describe("Reading from external contract", function () {
+        it("===test===", async function () {
+            const { testToken, keyStore, contract, owner } = await loadFixture(deployFixture);
+            
+            const code = await contract.read(keyStore.address);
+            console.log(`code: ${code}`);
+
+            expect(true).to.equal(false);
         });
     });
 });

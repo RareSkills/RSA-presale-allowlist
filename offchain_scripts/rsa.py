@@ -16,18 +16,26 @@ for i in range(5, min(30000, t)):
 	if math.gcd(i, t) == 1:
 		candidates.append(i)
 
-print(len(candidates))
+#print(len(candidates))
 e = random.choice(candidates)
 
 # e can be hardcoded to 3 for simplicity, but you need to check the following is true
 assert math.gcd(e, t) == 1
 
 d = pow(e, -1, t) # You've been warned. This is magic math, don't try to understand it yet or you will get nerdsniped. Only study this after the project is done.
-print(d)
+#print(d)
 
 message = 590
 
 sig = pow(message, d, n)
 
-print(pow(sig, e, n))
-print(message)
+#print(pow(sig, e, n))
+#print(message)
+
+print('==========================================================================================')
+print('================================Values for on chain RSA===================================')
+print(f'Signature,   s: {sig}\n')
+print(f'Small prime, e: {e}\n')
+print(f'Modulus,     n: {n}\n')
+print(f'Length of n   : {len(str(n))}\n')
+print('==========================================================================================')

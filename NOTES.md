@@ -4,7 +4,7 @@
 
 The over arching goal here is to create a more gas efficient allow listing system. To create a proof of concept and test we will need to:
 - [x] Spin up a simple project that involves minting
-- [ ] Lable `rsa.py` output more clearly (This will help transpose RSA proving function into solidity)
+- [x] Label `rsa.py` output more clearly (This will help transpose RSA proving function into solidity)
 - [ ] Implement functionality to prove signature (See `Using RSA for minting` below)
 - [ ] Implement reading/parsing large values (1024bit) from outside contracts (See `ExampleMulMod.sol` in ./contracts)
 - [ ] Utalize the `metamorphic` pattern for mutating this public key (The large value from above)

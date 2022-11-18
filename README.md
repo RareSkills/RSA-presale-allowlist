@@ -11,3 +11,6 @@ Install packages: `npm i`
 Run tests: `npx hardhat test`
 
 Display RSA script output: `python3 offchain_scripts/rsa.py`
+
+Compile contract to bytecode: `solc --bin contracts/KeyStore.sol`
+

@@ -40,27 +40,38 @@ describe("RSA presale allowlist", function () {
     });
 
     describe("Reading from external contract", function () {
-        xit("The 'read' function should return data from the passed in contract", async function () {
+        it("The 'read' function should return data from the passed in contract", async function () {
             const { testToken, keyStore, contract, owner } = await loadFixture(deployFixture);
 
-            const code = await contract.readFromAddress(keyStore.address);
+            const code = await contract._readFromAddress(keyStore.address, 1);
+            console.log(`code: ${code}`);
             expect(code).to.not.equal("");
         });
 
-        it("===", async function () {
+        it("Returns address", async function () {
             const { testToken, keyStore, contract, owner } = await loadFixture(deployFixture);
           
-            const abi = ethers.utils.defaultAbiCoder;
-            const params = abi.encode(["bytes"], [123456789]);
-            //console.log(`params: ${params}`);
-
-            const newAddress = await contract.callStatic.deployAsBytecode(params);
+            const newAddress = await contract.callStatic.deployAsBytecode('99999999999');
             console.log(`newAddress: ${newAddress}`);
 
-            const lgValue = await contract.readFromAddress(newAddress);
-            console.log(`lgValue : ${lgValue}`);
+            const code = await contract._readFromAddress(newAddress, 1);
+            console.log(`code: ${code}`);
 
-            expect(true).to.not.equal(false);
+            expect(true).to.equal(true);
         });
+
+        it("Returns code from specific memory slot", async function () {
+            const { testToken, keyStore, contract, owner } = await loadFixture(deployFixture);
+          
+            const memSlot8 = await contract.callStatic.deployAndReadSlot('99999999999', 8);
+            console.log(`memSlot8 : ${memSlot8}`); 
+
+            const memSlot9 = await contract.callStatic.deployAndReadSlot('99999999999', 9);
+            console.log(`memSlot9 : ${memSlot9}`); 
+
+            const memSlot10 = await contract.callStatic.deployAndReadSlot('99999999999', 10);
+            console.log(`memSlot10: ${memSlot10}`); 
+
+            expect(true).to.equal(true); });
     });
 });

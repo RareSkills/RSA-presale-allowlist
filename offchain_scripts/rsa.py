@@ -4,18 +4,18 @@ import Crypto.Util.number
 from Crypto.Hash import keccak
 
 # amount of bits random primes generated will have
+# must be multiple of 32 for this program
 bits=1024
 
-
+"""
 p = Crypto.Util.number.getPrime(bits, randfunc=Crypto.Random.get_random_bytes)
 q = Crypto.Util.number.getPrime(bits, randfunc=Crypto.Random.get_random_bytes)
 print('p: {}'.format(p))
 print('q: {}'.format(q))
+"""
+p = 174888828555925305075390329546013143919324268647735221221937813264127029256780097712250494933358872513494593532908644633146504541804334196341648036380445816347893239737947399342322517460815718649105318199301061568955594214058922168087745911441241786540941293082276552204888319489033375221896758138935340412251
+q = 170526776011501505943239164018296461218869706665296733474047279752986145195732565634823236537838902607152165668195153112273308928601181542403149851811695702004532693514928558557948633007304483833339623707762804960189267299150391589443817562159519078803855179891439953387134969310357526815902694071346231441213
 
-"""
-p = 162000876594795597299736998001679487049057496798720601339662692672237514980928850230680638253758148790892979149412352683873598801002541898305005494241468150282789666050369058317630579730422909061884749314764680041972966994998364831361656364941832746341857573215194601515572114046142094101603891585411758312973
-q = 105037078970721664052587554882401740522045237815528584789863171878010674009565781466562144073774457198472108418761396609824138842554734072093136501383500744791836516576978898949211563437859729871121702438831384866852676609614813495363591554607398233420396145880432874902181124751411998956844268008370838796077
-"""
 
 ####
 t = (p - 1) * (q- 1) # this is magic math, don't try to understand it yet or you will get nerdsniped
@@ -23,21 +23,22 @@ t = (p - 1) * (q- 1) # this is magic math, don't try to understand it yet or you
 # n 
 n = p * q
 
-# compute e
+# compute e (using a small prime 256 bits and less)
 candidates = []
 for i in range(5, min(30000, t)):
 	if math.gcd(i, t) == 1:
 		candidates.append(i)
 
-e = random.choice(candidates)
+#e = random.choice(candidates)
 # e can be hardcoded to 3 for simplicity, but you need to check the following is true
-# e = 20395
+e = 3
 assert math.gcd(e, t) == 1
 
 d = pow(e, -1, t) 
 
-# eth address to be signed
-message = 0x7361B301B10b371840ca7F6EB2A1aB41Fe1c938B
+# eth address to be signed (must pad to 32 bytes)
+#message = 0x7361B301B10b371840ca7F6EB2A1aB41Fe1c938B
+message = 0x5B38Da6a701c568545dCfcB03FcB875f56beddC4
 
 # sign with private key
 sig = pow(message, d, n)
@@ -54,7 +55,7 @@ print('=========================================================================
 
 print('==========================================================================================')
 print('================================Signature Gen and Decoding===================================')
-print(f'message: {hex(message)}\n')
+print(f'message: {message}\n')
 print(f'signature: {hex(sig)}\n')
 print(f'decoded signature: {hex(decodedSignature)}\n')
 print('==========================================================================================\n')

@@ -5,6 +5,12 @@ contract RsaVerifDemo {
     // fires when a metamorphic contract is deployed by cloning another contract.
     event Metamorphosed(address metamorphicContract, address newImplementation);
 
+    address owner;
+
+    constructor() {
+        owner = msg.sender;
+    }
+
     // metamorphic variables
     bytes private _metamorphicContractInitializationCode = (
       hex"5860208158601c335a63aaf10f428752fa158151803b80938091923cf3"
@@ -70,7 +76,12 @@ contract RsaVerifDemo {
         }         
     }
 
-    function deployPublicKey(bytes calldata publicKey, bytes32 _salt) external returns (address metamorphicContractAddress) {
+    modifier onlyOwner() {
+        require(owner == msg.sender);
+        _;
+    }
+
+    function deployPublicKey(bytes calldata publicKey, bytes32 _salt) external onlyOwner()  returns (address metamorphicContractAddress) {
         // n (modulus), as e is hardcoded
         require(publicKey.length == 256, "incorrect publicKey length");
 
@@ -113,7 +124,7 @@ contract RsaVerifDemo {
         emit Metamorphosed(deployedMetamorphicContract, implementationContract);
     }
 
-    function destroyContract(address _a) external {
+    function destroyContract(address _a) external onlyOwner() {
         (bool success, ) = _a.call("");
         require(success);
     }

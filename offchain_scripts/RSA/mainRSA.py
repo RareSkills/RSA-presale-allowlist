@@ -3,11 +3,11 @@ import genSingularSignature
 import bulkGenSignatures
 import sys
 
-# mainRSA.py --genKeyPair -genExponent 
+# mainRSA.py --genKeyPair -genExponent
 # if no -genKeyPair then use existing keys inside ./crypto dir
 # if no --genExponent then by default use e=3
-# mainRSA.py --genExponent --genSingularSignature [address] 
-# mainRSA.py --genExponent --bulkGenSignatures [readingFile] [outputFile] [headerPresent (True or False)]
+# mainRSA.py --genSingularSignature [address]
+# mainRSA.py --bulkGenSignatures [readingFile] [outputFile] [headerPresent (True or False)]
 # csv files and main files must be in same dir
 # crypto files must be in crypto folder
 

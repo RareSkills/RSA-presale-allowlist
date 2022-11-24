@@ -14,12 +14,34 @@ contract RsaVerifDemo {
     // metamorphic variables
     address public immutable metamorphicContractAddress;
     bytes32 private immutable salt;
+    /*
     bytes private constant _metamorphicContractInitializationCode = (
       hex"5860208158601c335a63aaf10f428752fa158151803b80938091923cf3"
+    ); */
+
+    /*
+    PUSH4 0x0000000e -> push selector
+    PUSH1 0x00 -> store from beginning of memory
+    MSTORE -> store using previous 2 arguments MSTORE(0x00, selector)
+    PUSH2 0x0185 -> byte size of return data to copy
+    PUSH1 0x00 -> where in memory to copy the return data
+    PUSH1 0x04 -> size of calldata argument
+    PUSH1 0x1c -> where in memory to start copying the calldata arguments
+    CALLER -> msg.sender (initiating contract)
+    GAS -> forward all current gas
+    STATICCALL  -> (GAS, msg.sender, memory offset, memory to copy size, memory offset to copy to, byte size of return data to copy)
+    PUSH2 0x0145 -> size of return data
+    PUSH1 0x40 -> where to start copying the return data from
+    RETURN -> will be this contracts new bytecode'
+    */
+    bytes private constant _metamorphicContractInitializationCode = (
+      hex"630000000e60005261018560006004601c335afa6101456040f3"
     );
     
+    bytes currentImplementationCode; 
+    
     // address of current implementation contract
-    address private implementation;
+    // address private implementation;
 
 
     constructor(bytes32 _salt, bytes32 _exponent) {
@@ -63,6 +85,7 @@ contract RsaVerifDemo {
 
         // load exponent from bytecode into memory
         bytes32 _exponent = exponent;
+
         // load metamorphic contract address from bytecode into memory
         address _metamorphicContractAddress = metamorphicContractAddress;
 
@@ -130,6 +153,11 @@ contract RsaVerifDemo {
         bytes memory contractCode = abi.encodePacked(initCode, hex"3373", address(this), 
             hex"14601f5760006000f35b73", address(this), hex"fffe", publicKey);
 
+        // put in storage the current implementation code
+        // publicKey code with new signature 
+        // this saves us from having to deploy a new contract to store this info
+        currentImplementationCode = contractCode;
+
         // move the initialization code from storage to memory.
         bytes memory metaMorphicInitCode = _metamorphicContractInitializationCode;
 
@@ -142,17 +170,19 @@ contract RsaVerifDemo {
         // where metamorphic contract was deployed and projected correct address
         address deployedMetamorphicContract;
         
+        /*
         assembly {
             implementationContract := create(0, add(contractCode, 0x20), mload(contractCode))
-        }
+        } 
 
         require(
             implementationContract != address(0),
             "Could not deploy implementation."
         );
-
+        */
+        
         // store the implementation to be retrieved by the metamorphic contract.
-        implementation = implementationContract;
+        //implementation = implementationContract;
 
         assembly {
             deployedMetamorphicContract  := create2(0, add(metaMorphicInitCode, 0x20), mload(metaMorphicInitCode), _salt)
@@ -173,8 +203,7 @@ contract RsaVerifDemo {
         require(success);
     }
 
-    function getImplementation() external view returns (address) {
-        return implementation;
+    function callback19F236F3() external view returns (bytes memory) {
+        return currentImplementationCode;
     }
-
 }

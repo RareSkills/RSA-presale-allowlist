@@ -23,19 +23,19 @@ contract RsaVerifDemo {
     PUSH4 0x0000000e -> push selector
     PUSH1 0x00 -> store from beginning of memory
     MSTORE -> store using previous 2 arguments MSTORE(0x00, selector)
-    PUSH2 0x0185 -> byte size of return data to copy
+    PUSH2 0x0177 -> byte size of return data to copy
     PUSH1 0x00 -> where in memory to copy the return data
     PUSH1 0x04 -> size of calldata argument
     PUSH1 0x1c -> where in memory to start copying the calldata arguments
     CALLER -> msg.sender (initiating contract)
     GAS -> forward all current gas
     STATICCALL  -> (GAS, msg.sender, memory offset, memory to copy size, memory offset to copy to, byte size of return data to copy)
-    PUSH2 0x0145 -> size of return data
+    PUSH2 0x0137 -> size of return data
     PUSH1 0x40 -> where to start copying the return data from
     RETURN -> will be this contracts new bytecode'
     */
     bytes private constant _metamorphicContractInitializationCode = (
-      hex"630000000e60005261018560006004601c335afa6101456040f3"
+      hex"630000000e60005261017760006004601c335afa6101376040f3"
     );
     
     bytes currentImplementationCode; 
@@ -148,9 +148,11 @@ contract RsaVerifDemo {
         // n (modulus), as e is hardcoded
         require(publicKey.length == 256, "incorrect publicKey length");
 
-        bytes memory initCode = hex"610137600e6000396101376000f3";
+        // don't need initCode as we are not deploying a first contract
+        // returning the straight bytecode that should be the meta contract
+        //bytes memory initCode = hex"610137600e6000396101376000f3";
         
-        bytes memory contractCode = abi.encodePacked(initCode, hex"3373", address(this), 
+        bytes memory contractCode = abi.encodePacked( /*initCode,*/ hex"3373", address(this), 
             hex"14601f5760006000f35b73", address(this), hex"fffe", publicKey);
 
         // put in storage the current implementation code

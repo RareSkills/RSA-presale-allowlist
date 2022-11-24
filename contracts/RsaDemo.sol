@@ -1,24 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.17;
 
-contract RsaVerifDemo {
-    // fires when a metamorphic contract is deployed by cloning another contract.
-    event Metamorphosed(address metamorphicContract, address newImplementation);
-
-    // Controller of selfdestruct/deploy of public key contract
-    address public immutable owner;
-    
-    // for RSA calculations
-    bytes32 public immutable exponent;
-
-    // metamorphic variables
-    address public immutable metamorphicContractAddress;
-    bytes32 private immutable salt;
-    /*
-    bytes private constant _metamorphicContractInitializationCode = (
-      hex"5860208158601c335a63aaf10f428752fa158151803b80938091923cf3"
-    ); */
-
+contract RsaDemo {
     /*
     PUSH4 0x0000000e -> push selector
     PUSH1 0x00 -> store from beginning of memory
@@ -34,55 +17,75 @@ contract RsaVerifDemo {
     PUSH1 0x40 -> where to start copying the return data from
     RETURN -> will be this contracts new bytecode'
     */
+
+
+    event Metamorphosed(address metamorphicContract);
+
+    // Controller of selfdestruct/deploy of public key contract
+    address public immutable owner;
+    
+    // for RSA calculations
+    bytes32 public immutable exponent;
+
+    address public immutable metamorphicContractAddress;
+
+    bytes32 private immutable salt;
+
+    bytes currentImplementationCode; 
+
     bytes private constant _metamorphicContractInitializationCode = (
       hex"630000000e60005261017760006004601c335afa6101376040f3"
     );
-    
-    bytes currentImplementationCode; 
-    
-    // address of current implementation contract
-    // address private implementation;
 
-
+    /**
+     * @dev METAMORPHIC_INIT_HASH is a calculated value based on '_metamorphicContractInitializationCode'
+     *      If the code is updated, be sure to recalculate the hash.
+     *  
+     *      keccak256(abi.encodePacked(_metamorphicContractInitializationCode)
+     */
+    bytes32 private constant METAMORPHIC_INIT_HASH = 0xc24922855851a254a6fc4fc08e7ae8481ab58d05b2e4f607575d845e559d69ba;
+    
+    
+//------------------------------------------------------------\\
     constructor(bytes32 _salt, bytes32 _exponent) {
         owner = msg.sender;
         salt = _salt;
+        exponent = _exponent;
 
-        bytes32 _metamorphicContractInitializationCodeHash = keccak256(
-            abi.encodePacked(
-            _metamorphicContractInitializationCode
-            )
-        ); 
-
-        // determine the address of the metamorphic contract.
         metamorphicContractAddress = 
         ( 
             address(
-                uint160(                      // downcast to match the address type.
+                uint160(
                     uint256
-                    (                    // convert to uint to truncate upper digits.
+                    (
                         keccak256
-                        (                // compute the CREATE2 hash using 4 inputs.
-                            abi.encodePacked(       // pack all inputs to the hash together.
-                            hex"ff",              // start with 0xff to distinguish from RLP.
-                            address(this),        // this contract will be the caller.
-                            _salt,                 // pass in the supplied salt value.
-                            _metamorphicContractInitializationCodeHash // the init code hash.
+                        ( 
+                            abi.encodePacked(
+                            hex"ff",
+                            address(this),
+                            _salt,   
+                            METAMORPHIC_INIT_HASH
                             )
                         )
                     )
                 )
             )
-        );
-
-        exponent = _exponent;
+        );     
     }
 
+    /**
+    * @notice verifySignature is the user facing function used to validate signed messages
+    *
+    * @param sig length must always be equal to the length of the public key(modulus)
+    *
+    * @dev exponent is padded to 256 bits on generation. See python script.
+    *
+    * @dev See below layout & link for memory when calling precompiled modular exponentiation contract (0x05)
+    *      <length_of_BASE(signature)> <length_of_EXPONENT> <length_of_MODULUS> <BASE(signature)> <EXPONENT> <MODULUS>
+    *
+    *      https://github.com/ethereum/EIPs/blob/master/EIPS/eip-198.md
+    */
     function verifySignature(bytes calldata sig) external view returns (bool) {
-        // <length_of_BASE> <length_of_EXPONENT> <length_of_MODULUS> <BASE> <EXPONENT> <MODULUS>
-        // size of modulus will be same size as signature
-        // exponent length will be less than 256 bits
-
         require(sig.length == 256);
         /*
         assembly {
@@ -93,21 +96,16 @@ contract RsaVerifDemo {
         }
         */
 
-        // load exponent from bytecode into memory
+        // load exponent and metamorphic contract address onto the stack
         bytes32 _exponent = exponent;
-
-        // load metamorphic contract address from bytecode into memory
         address _metamorphicContractAddress = metamorphicContractAddress;
 
         assembly {
-            
             let pointer := mload(0x40)
             
-            // length_of_BASE
+            // Store in memory, length of BASE(signature), EXPONENT, MODULUS
             mstore(pointer, sig.length)
-            // length_of_EXPONENT (should always be 256 bits and less) aka max 32 bytes
             mstore(add(pointer, 0x20), 0x20)
-            // length_of_MODULUS ( will always be same length as signature)
             mstore(add(pointer, 0x40), sig.length)
 
             // update ptr
@@ -120,18 +118,17 @@ contract RsaVerifDemo {
             // EXPONENT hardcoded to 3
             mstore(add(pointer, sig.length), _exponent)
 
-
-            // MODULUS (same as signature length)
-            // copy from the metamorphic contract code
-            // 0x37 -> offset of where the signature in the bytecode begins
-            let lookAhead := add(pointer, add(sig.length, 0x20))
-            extcodecopy(_metamorphicContractAddress, lookAhead, 0x37, sig.length)
-            pointer := add(lookAhead, sig.length)
+            // Calculate where in memory to copy modulus to
+            // 0x37 -> offset of where the signature in the metamorphic bytecode begins
+            let modPos := add(pointer, add(sig.length, 0x20))
+           
+//2636
+            extcodecopy(_metamorphicContractAddress, modPos, 0x37, sig.length)
 
             // call 0x05 precompile (modular exponentation)
-            // <length_of_BASE> <length_of_EXPONENT> <length_of_MODULUS> <BASE> <EXPONENT> <MODULUS>
             // 0x80 -> (pointer update) is the range of calldata arguments
-            if iszero(staticcall(gas(), 0x05, 0x80, pointer, 0, 0)) {
+           
+            if iszero(staticcall(gas(), 0x05, 0x80, 0x280, 0, 0)) {
                 revert(0, 0)
             }
 
@@ -140,8 +137,9 @@ contract RsaVerifDemo {
             returndatacopy(0x80, 0xe0, 0x20)
 
             let decodedSig := mload(0x80)
-            //let decodedSig := mload(add(0x60, sig.length))
 
+
+//29g
             if iszero(iszero(and(decodedSig, not(0xffffffffffffffffffffffffffffffffffffffff))))
             {
                 // validate decodedSignature is indeed an address
@@ -151,12 +149,16 @@ contract RsaVerifDemo {
 
             // if msg.sender == decoded signature
             // load the exact slot of where the decoded signature is copied to
+            /*
             if eq(caller(), decodedSig) {
                 // return true
                 mstore(0x00, 0x01)
                 return(0x00, 0x20)
             }
+            */
+
         }         
+        return true;
     }
 
     modifier onlyOwner() {
@@ -164,7 +166,7 @@ contract RsaVerifDemo {
         _;
     }
 
-    function deployPublicKey(bytes calldata publicKey) external onlyOwner()  returns (address) {
+    function deployPublicKey(bytes calldata publicKey) external onlyOwner() {
         // n (modulus), as e is hardcoded
         require(publicKey.length == 256, "incorrect publicKey length");
 
@@ -186,8 +188,7 @@ contract RsaVerifDemo {
         // get salt immutable from bytecode into memory
         bytes32 _salt = salt;
 
-        // declare a variable for the address of the implementation contract.
-        address implementationContract;
+
         
         // where metamorphic contract was deployed and projected correct address
         address deployedMetamorphicContract;
@@ -216,7 +217,7 @@ contract RsaVerifDemo {
             "Failed to deploy the new metamorphic contract."
         );
 
-        emit Metamorphosed(deployedMetamorphicContract, implementationContract);
+        emit Metamorphosed(deployedMetamorphicContract);
 
     }
 

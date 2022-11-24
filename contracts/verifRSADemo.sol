@@ -83,6 +83,16 @@ contract RsaVerifDemo {
         // size of modulus will be same size as signature
         // exponent length will be less than 256 bits
 
+        require(sig.length == 256);
+        /*
+        assembly {
+            // costs 365
+            if iszero(eq(sig.length, 0x100)) {
+                revert(0,0)
+            }
+        }
+        */
+
         // load exponent from bytecode into memory
         bytes32 _exponent = exponent;
 
@@ -127,11 +137,21 @@ contract RsaVerifDemo {
 
             // overwrite previous memory data and store return data
             // will return the decodedSignature aka corresponding message/address
-            returndatacopy(0x80, 0x00, returndatasize())
+            returndatacopy(0x80, 0xe0, 0x20)
+
+            let decodedSig := mload(0x80)
+            //let decodedSig := mload(add(0x60, sig.length))
+
+            if iszero(iszero(and(decodedSig, not(0xffffffffffffffffffffffffffffffffffffffff))))
+            {
+                // validate decodedSignature is indeed an address
+                // make sure calldata isn't being gamed
+                revert(0, 0)
+            }
 
             // if msg.sender == decoded signature
             // load the exact slot of where the decoded signature is copied to
-            if eq(caller(), mload(add(0x60, sig.length))) {
+            if eq(caller(), decodedSig) {
                 // return true
                 mstore(0x00, 0x01)
                 return(0x00, 0x20)

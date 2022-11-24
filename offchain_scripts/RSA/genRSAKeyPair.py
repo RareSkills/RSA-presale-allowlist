@@ -4,7 +4,7 @@ import Crypto.Util.number
 
 def generateKeys(genExponent=False):
 	# amount of bits random primes generated will have
-	# must be multiple of 32 for this program
+	# ** DO NOT CHANGE **
 	bits=1024
 
 	while True:
@@ -60,7 +60,7 @@ def generateKeys(genExponent=False):
 	print('================================Values for RSA===================================')
 	print(f'p: {p}\n')
 	print(f'q: {q}\n')
-	print(f'Small prime, e: {hex(e)}\n')
+	print(f'Small prime, e: {"0x" + str(hex(e))[2:].zfill(64)}\n') # pad to 32 bytes
 	print(f'Modulus,     n: {hex(n)}\n')
 	print('==========================================================================================\n')
 

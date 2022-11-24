@@ -16,6 +16,7 @@ def generateSigs(file, outputFile, header):
             if header:
                 # if user indicates presence of header
                 initialData = next(reader)
+                initialData.append('signature')
                 writer.writerow(initialData)
 
             for line in reader:

@@ -1,4 +1,5 @@
 import genRSAKeyPair
+import viewRSAKeyPair
 import genSingularSignature
 import bulkGenSignatures
 import sys
@@ -15,6 +16,12 @@ def main():
     flags = sys.argv
 
     if len(sys.argv) > 1:
+        if "--viewKeyPair" in flags and "--genKeyPair" in flags:
+            raise Exception("Cannot both view then generate a signature! Either or")
+        
+        if "--viewKeyPair" in flags:
+            viewRSAKeyPair.viewKeys()
+
         # see if they want to generate a new key, if not then use stored keys in ./crypto dir
         if "--genKeyPair" in flags:
             # if there is genExponent or not

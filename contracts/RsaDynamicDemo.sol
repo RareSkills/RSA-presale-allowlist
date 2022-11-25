@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.17;
 
-contract RsaImmutableDemo {
+contract RsaDynamicDemo {
     // fires when a metamorphic contract is deployed by cloning another contract.
     event Metamorphosed(address metamorphicContract, address newImplementation);
 
@@ -10,14 +10,16 @@ contract RsaImmutableDemo {
     
     // for RSA calculations
     bytes32 public immutable exponent;
-    bytes32 public immutable modulus1;
-    bytes32 public immutable modulus2;
+    /*
+    bytes32 immutable modulus1;
+    bytes32 immutable modulus2;
     bytes32 immutable modulus3;
     bytes32 immutable modulus4;
     bytes32 immutable modulus5;
     bytes32 immutable modulus6;
     bytes32 immutable modulus7;
     bytes32 immutable modulus8;
+    */
 
     // metamorphic variables
     address public immutable metamorphicContractAddress;
@@ -54,7 +56,8 @@ contract RsaImmutableDemo {
 
     constructor(
         bytes32 _salt, 
-        bytes32 _exponent, 
+        bytes32 _exponent
+        /* 
         bytes32  _modulus1,
         bytes32  _modulus2,
         bytes32  _modulus3,
@@ -62,7 +65,8 @@ contract RsaImmutableDemo {
         bytes32  _modulus5,
         bytes32  _modulus6,
         bytes32  _modulus7,
-        bytes32  _modulus8  
+        bytes32  _modulus8
+        */  
         ) {
         owner = msg.sender;
         salt = _salt;
@@ -96,7 +100,7 @@ contract RsaImmutableDemo {
             )
         );
 
-
+        /*
         modulus1 = _modulus1;
         modulus2 = _modulus2;
         modulus3 = _modulus3;
@@ -105,6 +109,7 @@ contract RsaImmutableDemo {
         modulus6 = _modulus6;
         modulus7 = _modulus7;
         modulus8 = _modulus8;
+        */
    
     }
 
@@ -127,6 +132,7 @@ contract RsaImmutableDemo {
         bytes32 _exponent = exponent;
 
         // load modulus
+        /*
         bytes32  _modulus1 = modulus1;
         bytes32  _modulus2 = modulus2;
         bytes32  _modulus3 = modulus3;
@@ -135,9 +141,10 @@ contract RsaImmutableDemo {
         bytes32  _modulus6 = modulus6;
         bytes32  _modulus7 = modulus7;
         bytes32  _modulus8 = modulus8;
+        */
 
         // load metamorphic contract address from bytecode into memory
-        //address _metamorphicContractAddress = metamorphicContractAddress;
+        address _metamorphicContractAddress = metamorphicContractAddress;
 
         assembly {
             
@@ -166,7 +173,8 @@ contract RsaImmutableDemo {
             // copy from the metamorphic contract code
             // 0x37 -> offset of where the signature in the bytecode begins
             pointer := add(pointer, 0x120) // sig.length + exponent length(0x20)
-            //extcodecopy(_metamorphicContractAddress, lookAhead, 0x37, sig.length)
+            extcodecopy(_metamorphicContractAddress, pointer, 0x37, sig.length)
+            /*
             mstore(pointer, _modulus1)
             mstore(add(pointer, 0x20), _modulus2)
             mstore(add(pointer, 0x40), _modulus3)
@@ -174,22 +182,23 @@ contract RsaImmutableDemo {
             mstore(add(pointer, 0x80), _modulus5)
             mstore(add(pointer, 0xa0), _modulus6)
             mstore(add(pointer, 0xc0), _modulus7)
-            mstore(add(pointer, 0xe0), _modulus8)
+            mstore(add(pointer, 0xe0), _modulus8) 
+            */
             pointer := add(pointer, sig.length)
 
             // call 0x05 precompile (modular exponentation)
             // <length_of_BASE> <length_of_EXPONENT> <length_of_MODULUS> <BASE> <EXPONENT> <MODULUS>
             // 0x80 -> (pointer update) is the range of calldata arguments
-            if iszero(staticcall(gas(), 0x05, 0x80, pointer, 0x80, sig.length)) {
+            if iszero(staticcall(gas(), 0x05, 0x80, pointer, 0, 0)) {
                 revert(0, 0)
             }
 
             // overwrite previous memory data and store return data
             // will return the decodedSignature aka corresponding message/address
-            //returndatacopy(0x80, 0xe0, 0x20)
+            returndatacopy(0x80, 0xe0, 0x20)
 
-            //let decodedSig := mload(0x80)
-            let decodedSig := mload(add(0x60, sig.length))
+            let decodedSig := mload(0x80)
+            //let decodedSig := mload(add(0x60, sig.length))
 
             if iszero(iszero(and(decodedSig, not(0xffffffffffffffffffffffffffffffffffffffff))))
             {

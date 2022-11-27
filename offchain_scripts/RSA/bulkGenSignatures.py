@@ -39,7 +39,7 @@ def generateSigs(file, outputFile, header):
 
                 # signature will always be appended as last value 
                 # i.e address, email, signature
-                line.append(str(hex(sig)))      
+                line.append("0x" + str(hex(sig))[2:].zfill(512))    
                 writer.writerow(line)
 
             # close csv file objects

@@ -24,6 +24,6 @@ def generateSig(address):
     print('==========================================================================================')
     print('================================Signature Gen and Decoding===================================')
     print(f'message: {address}\n')
-    print(f'signature: {hex(sig)}\n')
+    print(f'signature: {"0x" + str(hex(sig))[2:].zfill(512)}\n') # pad to 512 bits
     print(f'decoded signature: {hex(decodedSignature)}\n')
     print('==========================================================================================\n')

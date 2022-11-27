@@ -2,19 +2,6 @@
 pragma solidity 0.8.17;
 
 contract RsaCopyCodeDemo {
-    
-    // for RSA calculations
-    bytes32 public immutable exponent;
-
-    bytes32 private immutable salt;
-
-    constructor(
-        bytes32 _salt, 
-        bytes32 _exponent
-        ) {
-        salt = _salt;
-        exponent = _exponent;
-    }
 
     function verifySignature(bytes calldata sig) external view returns (bool) {
         // <length_of_BASE> <length_of_EXPONENT> <length_of_MODULUS> <BASE> <EXPONENT> <MODULUS>
@@ -30,9 +17,6 @@ contract RsaCopyCodeDemo {
             }
         }
         */
-
-        // load exponent from bytecode into memory
-        bytes32 _exponent = exponent;
 
         assembly {
             
@@ -53,11 +37,11 @@ contract RsaCopyCodeDemo {
             calldatacopy(pointer, sig.offset, sig.length)
 
             // EXPONENT hardcoded to 3
-            mstore(add(pointer, sig.length), _exponent)
+            mstore(add(pointer, sig.length), 0x03)
 
             // MODULUS (same as signature length)
             pointer := add(pointer, 0x120) // sig.length + exponent length(0x20)
-            codecopy(pointer, 0x28f, sig.length)
+            codecopy(pointer, 0x1a5, sig.length)
 
             pointer := add(pointer, sig.length)
 
@@ -88,8 +72,7 @@ contract RsaCopyCodeDemo {
                 // return true
                 mstore(0x00, 0x01)
                 return(0x00, 0x20)
-            } 
+            }
         }        
-    }
-
+    }    
 }

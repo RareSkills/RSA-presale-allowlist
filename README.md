@@ -33,3 +33,7 @@ Display RSA script output: `python3 offchain_scripts/rsa.py`
 
 Compile contract to bytecode: `solc --bin contracts/KeyStore.sol`
 
+Lint solidity code: `npx prettier --write 'contracts/**/*.sol'`
+
+Lint js code: `npx prettier --write '**/*.js'`
+

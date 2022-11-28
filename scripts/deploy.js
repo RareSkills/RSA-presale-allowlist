@@ -5,7 +5,7 @@
 // will compile your contracts, add the Hardhat Runtime Environment's members to the
 // global scope, and execute the script.
 const hre = require("hardhat");
-const deployment = require('./deploymentCodeCopyHelper.js');
+const deployment = require("./deploymentCodeCopyHelper.js");
 
 async function main() {
   // run deployment code for RsaCodeCopydemo.sol with modified bytecode

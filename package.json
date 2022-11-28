@@ -11,17 +11,20 @@
     "@openzeppelin/contracts": "^4.8.0",
     "@typechain/ethers-v5": "^10.1.1",
     "@typechain/hardhat": "^6.1.4",
+    "@types/mocha": "^9.1.1",
     "chai": "^4.3.7",
     "ethers": "^5.0.0",
     "hardhat": "^2.12.2",
     "hardhat-gas-reporter": "^1.0.9",
+    "prettier": "^2.8.0",
+    "prettier-plugin-solidity": "^1.0.0",
     "solidity-coverage": "^0.8.2",
-    "typechain": "^8.1.1"
+    "ts-node": "^10.9.1",
+    "typechain": "^8.1.1",
+    "typescript": "^4.9.3"
   },
   "dependencies": {
-    "chalk": "^4.1.2",
     "dotenv": "^16.0.3",
-    "fs": "^0.0.1-security",
     "path": "^0.12.7",
     "solc": "^0.8.17"
   }

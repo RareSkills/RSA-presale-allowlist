@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.17;
 
-contract RsaDemo1024 {
+contract RsaDemo900 {
 
     event Metamorphosed(address metamorphicContract);
 
-    // Controller of selfdestruct/deploy of public key contract
+    bytes32 public constant EXPONENT = 0x0000000000000000000000000000000000000000000000000000000000000003;
+
     address public immutable owner;
-    
-    // for RSA calculations
-    bytes32 public immutable exponent;
 
     address public immutable metamorphicContractAddress;
 
@@ -17,6 +15,9 @@ contract RsaDemo1024 {
 
     bytes currentImplementationCode; 
 
+    /**
+    * @dev See README.md for bytecode breakdown
+    */
     bytes private constant _metamorphicContractInitializationCode = (
       hex"630000000e60005261017760006004601c335afa6101376040f3"
     );
@@ -31,10 +32,9 @@ contract RsaDemo1024 {
     
     
 //------------------------------------------------------------\\
-    constructor(bytes32 _salt, bytes32 _exponent) {
+    constructor(bytes32 _salt) {
         owner = msg.sender;
         salt = _salt;
-        exponent = _exponent;
 
         metamorphicContractAddress = 
         ( 
@@ -58,11 +58,11 @@ contract RsaDemo1024 {
     }
 
     /**
-    * @notice verifySignature is the user facing function used to validate signed messages
+    * @notice 'verifySignature' is the user facing function used to validate signed messages
     *
-    * @param sig length must always be equal to the length of the public key(modulus)
+    * @param 'sig' length must always be equal to the length of the public key(modulus)
     *
-    * @dev exponent is padded to 256 bits on generation. See python script.
+    * @dev Exponent is hardcoded at top of contract. It should always be 32 bytes
     *
     * @dev See below layout & link for memory when calling precompiled modular exponentiation contract (0x05)
     *      <length_of_BASE(signature)> <length_of_EXPONENT> <length_of_MODULUS> <BASE(signature)> <EXPONENT> <MODULUS>
@@ -70,79 +70,75 @@ contract RsaDemo1024 {
     *      https://github.com/ethereum/EIPs/blob/master/EIPS/eip-198.md
     */
     function verifySignature(bytes calldata sig) external view returns (bool) {
-        require(sig.length == 256);
-        /*
-        assembly {
-            // costs 365
-            if iszero(eq(sig.length, 0x100)) {
-                revert(0,0)
-            }
-        }
-        */
+        require(sig.length == 225);
 
-        // load exponent and metamorphic contract address onto the stack
-        bytes32 _exponent = exponent;
+        // Load immutable variable onto the stack
         address _metamorphicContractAddress = metamorphicContractAddress;
 
         assembly {
             let pointer := mload(0x40)
             
             // Store in memory, length of BASE(signature), EXPONENT, MODULUS
-            mstore(pointer, sig.length)
+            mstore(pointer, 0xe1)
             mstore(add(pointer, 0x20), 0x20)
-            mstore(add(pointer, 0x40), sig.length)
+            mstore(add(pointer, 0x40), 0xe1)
 
             // update ptr
             mstore(0x40, 0xe0)
             pointer := 0xe0
 
             // BASE: The signature
-            calldatacopy(pointer, sig.offset, sig.length)
+            calldatacopy(0xe0, sig.offset, sig.length)
 
             // EXPONENT hardcoded to 3
-            mstore(add(pointer, sig.length), _exponent)
+            //mstore(add(pointer, 0xe1), 0x03)
+            mstore(add(pointer, 0xe1), EXPONENT)
 
             // Calculate where in memory to copy modulus to
-            // 0x37 -> offset of where the signature in the metamorphic bytecode begins
-            let modPos := add(pointer, add(sig.length, 0x20))
+            // 0x37 -> offset of where the signature begins in the metamorphic bytecode 
+            let modPos := add(pointer, add(0xe1, 0x20))
            
-//2636
-            extcodecopy(_metamorphicContractAddress, modPos, 0x37, sig.length)
+            extcodecopy(_metamorphicContractAddress, modPos, 0x37, 0xe1)
+           
 
-            // call 0x05 precompile (modular exponentation)
-            // 0x80 -> (pointer update) is the range of calldata arguments
-           
-            if iszero(staticcall(gas(), 0x05, 0x80, 0x280, 0, 0)) {
+            /**
+            * @dev Call 0x05 precompile (modular exponentation)
+            * 
+            * Args: 
+            *   gas, 
+            *   precomipled contract address, 
+            *   memory pointer of begin of calldata, 
+            *   size of call data, 
+            *   pointer for where to copy return, 
+            *   size of return data
+            */ 
+
+            if iszero(staticcall(gas(), 0x05, 0x80, 0x242, 0, 0)) {
                 revert(0, 0)
             }
-
-            // overwrite previous memory data and store return data
-            // will return the decodedSignature aka corresponding message/address
-            returndatacopy(0x80, 0xe0, 0x20)
+ 
+            // Move last 32 bytes of return data to begining of 'free memory'
+            returndatacopy(0x80, 0xc1, 0x20)
 
             let decodedSig := mload(0x80)
 
-
-//29g
+            // Check bit mask of return data. Ensure it is a valid address (first 12 bytes are zero)
             if iszero(iszero(and(decodedSig, not(0xffffffffffffffffffffffffffffffffffffffff))))
             {
-                // validate decodedSignature is indeed an address
-                // make sure calldata isn't being gamed
                 revert(0, 0)
             }
 
             // if msg.sender == decoded signature
-            // load the exact slot of where the decoded signature is copied to
-            /*
             if eq(caller(), decodedSig) {
-                // return true
+                // Return true
                 mstore(0x00, 0x01)
                 return(0x00, 0x20)
             }
-            */
+            // Else Return false
+            mstore(0x00, 0x00)
+            return(0x00, 0x20)
 
-        }         
-        return true;
+        }        
     }
 
     modifier onlyOwner() {
@@ -150,52 +146,36 @@ contract RsaDemo1024 {
         _;
     }
 
+    /**
+    * @notice 'deployPublicKey' is used in initializing the contract that hold the RSA modulus (n)
+    *
+    * @dev See Repo README for guide to generating public key
+    *
+    * https://github.com/RareSkills/RSA-presale-allowlist
+    */
     function deployPublicKey(bytes calldata publicKey) external onlyOwner() {
-        // n (modulus), as e is hardcoded
-        require(publicKey.length == 256, "incorrect publicKey length");
-
-        // don't need initCode as we are not deploying a first contract
-        // returning the straight bytecode that should be the meta contract
-        //bytes memory initCode = hex"610137600e6000396101376000f3";
+        require(publicKey.length == 225, "incorrect publicKey length");
         
-        bytes memory contractCode = abi.encodePacked( /*initCode,*/ hex"3373", address(this), 
+        bytes memory contractCode = abi.encodePacked(hex"3373", address(this), 
             hex"14601f5760006000f35b73", address(this), hex"fffe", publicKey);
 
-        // put in storage the current implementation code
-        // publicKey code with new signature 
-        // this saves us from having to deploy a new contract to store this info
+  
+        //Code to be returned from metamorphic init callback. See README for full explanation
         currentImplementationCode = contractCode;
 
-        // move the initialization code from storage to memory.
+        // Load immutable variables onto the stack
         bytes memory metaMorphicInitCode = _metamorphicContractInitializationCode;
-
-        // get salt immutable from bytecode into memory
         bytes32 _salt = salt;
 
-
         
-        // where metamorphic contract was deployed and projected correct address
         address deployedMetamorphicContract;
         
-        /*
-        assembly {
-            implementationContract := create(0, add(contractCode, 0x20), mload(contractCode))
-        } 
-
-        require(
-            implementationContract != address(0),
-            "Could not deploy implementation."
-        );
-        */
-        
-        // store the implementation to be retrieved by the metamorphic contract.
-        //implementation = implementationContract;
 
         assembly {
             deployedMetamorphicContract  := create2(0, add(metaMorphicInitCode, 0x20), mload(metaMorphicInitCode), _salt)
         }
 
-        // ensure that the contracts were successfully deployed.
+        // Insure metamorphic deployment to address defines in constructor
         require(
             deployedMetamorphicContract == metamorphicContractAddress,
             "Failed to deploy the new metamorphic contract."
@@ -205,11 +185,23 @@ contract RsaDemo1024 {
 
     }
 
+    /**
+    * @notice 'destroyContract' must be called before redeployment of public key contract
+    *
+    * @dev See Repo README for guide to generating public key
+    *
+    * https://github.com/RareSkills/RSA-presale-allowlist
+    */
     function destroyContract() external onlyOwner() {
         (bool success, ) = metamorphicContractAddress.call("");
         require(success);
     }
 
+    /**
+    * @notice 'callback19F236F3' is a critical step in the initialization of a metamorphic contract
+    *
+    * @dev The function selector for this is '0x0000000e'
+    */
     function callback19F236F3() external view returns (bytes memory) {
         return currentImplementationCode;
     }

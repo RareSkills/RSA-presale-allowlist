@@ -1,4 +1,5 @@
 require("@nomicfoundation/hardhat-toolbox");
+require("@nomiclabs/hardhat-ethers");
 require("hardhat-gas-reporter");
 require('dotenv').config();
 
@@ -8,10 +9,16 @@ const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY;
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: "0.8.17",
-  networks: {
-    goerli: {
-      url: `https://eth-goerli.alchemyapi.io/v2/${ALCHEMY_API_KEY}`,
-      accounts: [GOERLI_PRIVATE_KEY]
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 1000,
+      },
+    },
+    networks: {
+      goerli: {
+        url: `https://eth-goerli.alchemyapi.io/v2/${ALCHEMY_API_KEY}`,
+        accounts: [GOERLI_PRIVATE_KEY]
+      },
     }
-  }
 };

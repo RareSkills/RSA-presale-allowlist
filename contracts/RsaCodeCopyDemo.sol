@@ -2,6 +2,7 @@
 pragma solidity 0.8.17;
 
 contract RsaCopyCodeDemo {
+    // Do not modify!
 
     function verifySignature(bytes calldata sig) external view returns (bool) {
         // <length_of_BASE> <length_of_EXPONENT> <length_of_MODULUS> <BASE> <EXPONENT> <MODULUS>
@@ -41,7 +42,8 @@ contract RsaCopyCodeDemo {
 
             // MODULUS (same as signature length)
             pointer := add(pointer, 0x120) // sig.length + exponent length(0x20)
-            codecopy(pointer, 0x1a5, sig.length)
+            // 0x1a5 is offset of where to being copying modulus ** DO NOT CHANGE **
+            codecopy(pointer, 0x20c, sig.length)
 
             pointer := add(pointer, sig.length)
 

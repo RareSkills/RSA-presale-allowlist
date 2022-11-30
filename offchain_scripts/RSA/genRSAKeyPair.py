@@ -5,7 +5,7 @@ import Crypto.Util.number
 def generateKeys(genExponent=False):
 	# amount of bits random primes generated will have
 	# ** DO NOT CHANGE **
-	bits=1024
+	bits=864
 
 	while True:
 		# will keep looping until a p and q is chosen that has a satsifactory exponent value

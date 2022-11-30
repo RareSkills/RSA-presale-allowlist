@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.17;
 
-contract Rsa900 {
+contract Rsa {
     event Metamorphosed(address metamorphicContract);
 
     bytes32 public constant EXPONENT =
@@ -112,11 +112,13 @@ contract Rsa900 {
              *   size of return data
              */
 
-            if iszero(staticcall(gas(), 0x05, 0x80, 0x242, 0x80, sig.length)) {
+            let callDataSize := add(0x80, mul(sig.length, 2))
+
+            if iszero(staticcall(gas(), 0x05, 0x80, callDataSize, 0x80, sig.length)) {
                 revert(0, 0)
             }
 
-            let decodedSig := mload(0x141)
+            let decodedSig := mload(add(0x60, sig.length))
 
             // Check bit mask of return data. Ensure it is a valid address (first 12 bytes are zero)
             if iszero(

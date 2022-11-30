@@ -13,6 +13,8 @@ contract Rsa900 {
 
     bytes32 private immutable salt;
 
+    uint256 private immutable modLength;
+
     bytes currentImplementationCode;
 
     /**
@@ -32,7 +34,7 @@ contract Rsa900 {
         0xc24922855851a254a6fc4fc08e7ae8481ab58d05b2e4f607575d845e559d69ba;
 
     //------------------------------------------------------------\\
-    constructor(bytes32 _salt) {
+    constructor(bytes32 _salt, uint256 _modLength) {
         owner = msg.sender;
         salt = _salt;
 
@@ -52,6 +54,8 @@ contract Rsa900 {
                 )
             )
         );
+
+        modLength = _modLength;
     }
 
     /**
@@ -67,7 +71,7 @@ contract Rsa900 {
      *      https://github.com/ethereum/EIPs/blob/master/EIPS/eip-198.md
      */
     function verifySignature(bytes calldata sig) external view returns (bool) {
-        require(sig.length == 225);
+        require(sig.length == modLength);
 
         // Load immutable variable onto the stack
         address _metamorphicContractAddress = metamorphicContractAddress;
@@ -151,7 +155,7 @@ contract Rsa900 {
      * https://github.com/RareSkills/RSA-presale-allowlist
      */
     function deployPublicKey(bytes calldata publicKey) external onlyOwner {
-        require(publicKey.length == 225, "incorrect publicKey length");
+        require(publicKey.length == modLength, "incorrect publicKey length");
 
         bytes memory contractCode = abi.encodePacked(
             hex"3373",

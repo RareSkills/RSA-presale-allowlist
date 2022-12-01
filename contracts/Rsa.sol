@@ -112,12 +112,18 @@ contract Rsa {
              *   size of return data
              */
 
+            // lengths of Signature + Base + Exponent = 0x60...
+            // Added with space of storage occupied by exponent, modulus, and signature...
+            // Which is 0x20 + (sig.length * 2) as modulus length will always == signature length  
             let callDataSize := add(0x80, mul(sig.length, 2))
 
             if iszero(staticcall(gas(), 0x05, 0x80, callDataSize, 0x80, sig.length)) {
                 revert(0, 0)
             }
 
+            // decoded signature is always stored in the last 32 bytes of return data
+            // sig.length + 0x80 is the end of the return data
+            // 0x60 + sig.length will give you the last 32 bytes 
             let decodedSig := mload(add(0x60, sig.length))
 
             // Check bit mask of return data. Ensure it is a valid address (first 12 bytes are zero)

@@ -77,26 +77,21 @@ contract Rsa {
         address _metamorphicContractAddress = metamorphicContractAddress;
 
         assembly {
-            let pointer := mload(0x40)
-
+            // no need to update pointer as all memory written here can be overwriten with no consequence 
             // Store in memory, length of BASE(signature), EXPONENT, MODULUS
-            mstore(pointer, sig.length)
-            mstore(add(pointer, 0x20), 0x20)
-            mstore(add(pointer, 0x40), sig.length)
-
-            // update ptr
-            mstore(0x40, 0xe0)
-            pointer := 0xe0
+            mstore(0x80, sig.length)
+            mstore(add(0x80, 0x20), 0x20)
+            mstore(add(0x80, 0x40), sig.length)
 
             // BASE: The signature
             calldatacopy(0xe0, sig.offset, sig.length)
 
             // EXPONENT hardcoded to 3
-            mstore(add(pointer, sig.length), EXPONENT)
+            mstore(add(0xe0, sig.length), EXPONENT)
 
             // Calculate where in memory to copy modulus to
             // 0x37 -> offset of where the signature begins in the metamorphic bytecode
-            let modPos := add(pointer, add(sig.length, 0x20))
+            let modPos := add(0xe0, add(sig.length, 0x20))
 
             extcodecopy(_metamorphicContractAddress, modPos, 0x37, sig.length)
 
@@ -177,9 +172,10 @@ contract Rsa {
         //Code to be returned from metamorphic init callback. See README for full explanation
         currentImplementationCode = contractCode;
 
-        // Load immutable variables onto the stack
-        bytes
-            memory metaMorphicInitCode = _metamorphicContractInitializationCode;
+        // load immutable variable into memory
+        bytes memory metaMorphicInitCode = _metamorphicContractInitializationCode;
+
+        // Load immutable variable onto the stack
         bytes32 _salt = salt;
 
         address deployedMetamorphicContract;

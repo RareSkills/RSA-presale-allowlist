@@ -13,8 +13,8 @@ The issues with the mapping, and merkle approach is a cap on scalability. Our ai
 the current best known approach the ECSDA Signature Verification.
 
 #### Our approach:
-- RSA 1024 bit Metamorphic (Gas: 27,056)
-- RSA 2000 bit Metamorphic (Gas: 29,234) 
+- RSA 1024 bit Metamorphic (Gas: 27,033)
+- RSA 2000 bit Metamorphic (Gas: 29,211) 
 
 <hr>
 
@@ -83,7 +83,7 @@ Our approach cuts out the need of having to deploy the implementation contract e
 ## Tests
 Run tests: `npx hardhat test`
 
-![image](https://user-images.githubusercontent.com/106453938/205136488-d50514ee-c1f7-4b8b-abf1-b4d4d9aa7dbb.png)
+![image](https://user-images.githubusercontent.com/106453938/205175865-b6b83020-ef31-4b32-876f-65795e85e59b.png)
 
 ## Working with the repo:
 

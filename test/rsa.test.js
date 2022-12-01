@@ -3,20 +3,24 @@ const { expect } = require("chai");
 
 const verifySignatureSelector = "0xf80af984";
 
-const TEST_PUBLIC_KEY_900 =
-  "0xece30999723db3a74f0361d350ce4859758fec59db2470e9b04049f1a79ee8f1ec0d0d731becf4d39c9c74aefdaa62a3ce2639d05cfe5d6f0685f8d33636d65293b4ebe839d60e81d83ff7c298340223648007331001cec1756c3a01ee2639388906dc1fb30625f465d95b70a38f4e29b3c4f17f6dd48dab9d4806287bc6ac31ff16e7674b2b7c9c10e31f42aed1a3ba969caa7c8d453871e02c1349c67d149d114b20d5278dbd51caa97492eb9eefa601ba9ea4a487c8dda216125142b69489ab410ffce76fc67a848bdb4f4173aeffcec2aaa9a30bea4a2ca642900370d11167";
+const TEST_PUBLIC_KEY_1024 =
+  "0xb21748b28a4d0a072b1c7dcf43a5d885614cdb6468415534ce78725c6713fa3e5cac9e22e0a08096dd96ffc85e7998145f3e1c812c0e26416dfb670838337d73519a86f31dc6cbce3cfa46adf6971b5d28793474d92de1e28b2b54593207f800b66831a049f8f1c6ad51789448d30ffc6b01df5eb2b0301832ad70f6429cd409";
 
-const TEST_SIG_900 =
-  "0xcf01f74767b1e4be9f175488ee7340b505b37554aba5f87d788e6aec551b94c264cb75d6aadccc0aee9cd4d8d2d4ada300d4628ad410222f58a0af59a48d53a0352b35b5831cdbeca634a0168c30f1bc5ce82fc0fa10dea09156ed533f7e470ca4fe6509783823278ad6eff2348b3f4e3e89a9b27765b59493ed71732d011520ac79da4740f3bd047e0c83153b71126fb6f1174afaeb073394714d69b67c3b921e752d54125c34519c6f88ef96a4ea57030be48b7b2e27789cdcc8e57b5423981a4b0571e93833236601a01216a68f231f03fe0ef3c994e32aee892af42a3f50da";
+const TEST_SIG_1024 =
+  "0x939f58d488df3fca13f99077a6df35675ae392ce346968f735d71b5bd7d7c03ba48a0318d33d73af7a9f79dfa6b47bbe91fe3ecd1edaeaae9eb684677c0037a922b880a580349b728abc0297048fc08e229393024e0b1a89aa11a1a3f993d6bfec4af960e4ad7af62bbd451773bd3675550219e69fccca4ed6ac81ef8a7b04d5";
 
-const TEST_PUBLIC_KEY_864 =
-  "0xcee2673703bceb4756e42038bdb63772a90dbbf61df1fcb7bc72f8a51433db07e562a0d92b5165c7e7eceb94f0af2c33429875cf3dc27c0d780d23fbbfe2c4b746b8b9b9765a2f7ebc3270620f747dbe3b24ddf82d10b0fee4a583b8272c11a48ecffd11c503645990e604485fcecd2003f49427984193985aa657d533d3e0104d8e2c0ec2c7fc93f39d7cc32671856c41a3b9f528305a72a184b80d66fb85e7699da0c45d74c5101ffb0cbe6d59a133d77bd696a154cc27ad1f227c528ca2fadb4e3b0a5145c9443d4282dbb9d8c2840fc93e2bcda838db";
+const MOD_LENGTH_1024 = 128
 
-const TEST_SIG_864 =
-  "0x8c5e15e4fb5f4881c1aa4523a02cbf96cd480d9c65103e5b4b26a7adf3750b8a3eda24fd241ca05afdb8daf221c1467b906464fd8fcd2c27dccf7ebb762fac85fca831cb6b8a7c62f9fc5f79e104be937fb5bb7de7c1d7f244bec888364c0cddbe65bb29f4cfecd0fa9ab83142ef0baf0891c107fbac28cca10ca00bb1e34f6c18f29840a7373b404eb7d6fcec71ab093024362fd229dcafd75f26333e8a8f3827bd2db87d6fd2284ceb20bfebfb91e5e01e9377b2836dbba09b1e07cb4eafd9769f38e25d46181debc3b910fdc21cb31d24f3fe070ededf";
+const TEST_PUBLIC_KEY_2000 =
+  "0x697f16c4d76314d187b6225beb1a28ea64eb6ddf1f625f2f7a798bfe94e6b48f6ad2a44853f0deaac0380d693bf39c8d94f080a48ef62c975fb882e894f2b9dec6fee5cbe0a6b41ff942fbd90b6a64b26f764ea30c1f5ae3f9ba2195116f9cbe9b511c68b5ede83915104aba3485f3e13f4c2208e1ad01d18e2e578f959c88e9d5508b4bebd6c33696bd3207a40d7f961fa67f1dae521c1b764d7e1f619ad40fe4eb1aab871b9b2e844eb6050bf549892ad6f9bf755c864ed0e1fec72646ef9a7219319878b56d4aba8ca3a915d7b3ad6c911ea6e0b0f413fba9a42bd6e9beb518a5391cbc4f5e7c88b27c67f0545bffa0de715f96aac516c883";
+
+const TEST_SIG_2000 =
+  "0x5d84598e424e7c5ad3cc0a31f7c0593ddea5b6aea54151911f6199de1cafc68608535b188868048d7b43eff815747654b6fec96fe85d936e48d5814f0b3ab2a1f06ea27fcc548b28ff649aa3042b967c853267ce4708242a6d8449f165bf4d841b57cc0d61c28ce4692c1ab8701960652fa565c49207b786bbe3edca9c53caa3515c85f2f4e16eeeec99840c1e59466ae3e9cc8fc2ba245d4ee735bdcf84251e10295c704ce18946015d217597ef8a90654f6e78ad7ee72bc129584bc58cb364d8664abfaa0c5195c0cba074935a2de38611aa0a5210bc2ccfa01dc7513cbece815bfed036db5cb97ee41ca661d5cf74786a56e4ab7f7dfbf52f";
+
+const MOD_LENGTH_2000 = 250
 
 const INVALID_SIG =
-  "0x232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323";
+  "0x0daed3720f1e753c42a2b471bc492a395fae088713a016341d362d8aecf11364c5f39e14ea923de8fa18d312d2d0a0582b0a54a836600db0c75ca95005cbf6b9612116f59b1defeeccfa9f5868f06cbd1a7ac020fcea218a45aa8067361c68eb91b33d132bcab887e7006f62abb4458afe0878e2a1a1dfcdeba5b6107856f479";
 
 async function variableSigGasEstimate(
   user1,
@@ -53,81 +57,81 @@ describe("RSA presale allowlist", function () {
     const [owner, user1, user2] = await ethers.getSigners();
 
     const RsaFactory = await ethers.getContractFactory("Rsa");
-    const rsa900 = await RsaFactory.deploy(
+    const rsa1024 = await RsaFactory.deploy(
       "0x2323232323232323232323232323232323232323232323232323232323232323",
-      225
+      MOD_LENGTH_1024
     );
 
-    const rsa864 = await RsaFactory.deploy(
+    const rsa2000 = await RsaFactory.deploy(
       "0x2323232323232323232323232323232323232323232323232323232323232323",
-      216
+      MOD_LENGTH_2000
     );
 
-    await rsa900.connect(owner).deployPublicKey(TEST_PUBLIC_KEY_900);
-    await rsa864.connect(owner).deployPublicKey(TEST_PUBLIC_KEY_864);
+    await rsa1024.connect(owner).deployPublicKey(TEST_PUBLIC_KEY_1024);
+    await rsa2000.connect(owner).deployPublicKey(TEST_PUBLIC_KEY_2000);
 
-    const metamorphicContractAddress900 =
-      await rsa900.metamorphicContractAddress();
-    const metamorphicContractAddress864 =
-      await rsa864.metamorphicContractAddress();
+    const metamorphicContractAddress1024 =
+      await rsa1024.metamorphicContractAddress();
+    const metamorphicContractAddress2000 =
+      await rsa2000.metamorphicContractAddress();
 
     return {
-      rsa900,
-      rsa864,
+      rsa1024,
+      rsa2000,
       owner,
       user1,
       user2,
-      metamorphicContractAddress900,
-      metamorphicContractAddress864,
+      metamorphicContractAddress1024,
+      metamorphicContractAddress2000,
     };
   }
 
   describe("Verify signature - With  Gas Estimate", function () {
-    it("Should ensure verifySignature returns true (900 bit)", async function () {
-      const { rsa900, user1, metamorphicContractAddress900 } =
+    it("Should ensure verifySignature returns true (1024 bit)", async function () {
+      const { rsa1024, user1, metamorphicContractAddress1024 } =
         await loadFixture(deployFixture);
 
       await variableSigGasEstimate(
         user1,
-        rsa900.address,
-        TEST_SIG_900,
-        metamorphicContractAddress900
+        rsa1024.address,
+        TEST_SIG_1024,
+        metamorphicContractAddress1024
       );
 
-      const verified = await rsa900
+      const verified = await rsa1024
         .connect(user1)
-        .verifySignature(TEST_SIG_900);
+        .verifySignature(TEST_SIG_1024);
 
       expect(verified).to.equal(true);
     });
-    it("Should ensure verifySignature returns true (864 bit)", async function () {
-      const { rsa864, user1, metamorphicContractAddress864 } =
+    it("Should ensure verifySignature returns true (2000 bit)", async function () {
+      const { rsa2000, user1, metamorphicContractAddress2000 } =
         await loadFixture(deployFixture);
 
       await variableSigGasEstimate(
         user1,
-        rsa864.address,
-        TEST_SIG_864,
-        metamorphicContractAddress864
+        rsa2000.address,
+        TEST_SIG_2000,
+        metamorphicContractAddress2000
       );
 
-      const verified = await rsa864
+      const verified = await rsa2000
         .connect(user1)
-        .verifySignature(TEST_SIG_864);
+        .verifySignature(TEST_SIG_2000);
 
       expect(verified).to.equal(true);
     });
     it("Should ensure user2 cannot use invalid signature", async function () {
-      const { rsa900, user2 } = await loadFixture(deployFixture);
+      const { rsa1024, user2 } = await loadFixture(deployFixture);
 
       expect(
-        await rsa900.connect(user2).verifySignature(TEST_SIG_900)
+        await rsa1024.connect(user2).verifySignature(TEST_SIG_1024)
       ).to.equal(false);
     });
     it("Should ensure invalid signature causes revert", async function () {
-      const { rsa900, user2 } = await loadFixture(deployFixture);
+      const { rsa1024, user2 } = await loadFixture(deployFixture);
 
-      await expect(rsa900.connect(user2).verifySignature(INVALID_SIG)).to.be
+      await expect(rsa1024.connect(user2).verifySignature(INVALID_SIG)).to.be
         .rejected;
     });
   });

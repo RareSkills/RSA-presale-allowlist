@@ -1,21 +1,25 @@
 import math
 import random
 import Crypto.Util.number
+from RSAOutput import output
 
-def generateKeys(genExponent=False):
-	# amount of bits random primes generated will have
-	# ** DO NOT CHANGE **
-	bits=864
+def generateKeys(bits, genExponent=False):
+	if not bits % 4 == 0:
+		# allows for generation of modulus in the correct format
+		raise Exception("Must specify a key size divisible by 4!")
 
+	# A 1024 bit modulus is the product of two 512 bit primes
+	# thus divide by 2 to get the bits needed for each prime
+	randPrimeBits = bits//2
+
+	# will keep looping until a p and q is chosen that has a satsifactory exponent value
 	while True:
-		# will keep looping until a p and q is chosen that has a satsifactory exponent value
-		
-		# 2 random primes
-		p = Crypto.Util.number.getPrime(bits, randfunc=Crypto.Random.get_random_bytes)
-		q = Crypto.Util.number.getPrime(bits, randfunc=Crypto.Random.get_random_bytes)
+		# 2 random primes of variable bit length
+		p = Crypto.Util.number.getPrime(randPrimeBits, randfunc=Crypto.Random.get_random_bytes)
+		q = Crypto.Util.number.getPrime(randPrimeBits, randfunc=Crypto.Random.get_random_bytes)
 
 		# Euler's totient 
-		t = (p - 1) * (q- 1) 
+		t = (p - 1) * (q - 1) 
 
 		# n modulus (public key)
 		n = p * q
@@ -44,6 +48,7 @@ def generateKeys(genExponent=False):
 	d = pow(e, -1, t)
 
 	# store private and public key pairs in crypto folder
+	# values are stored as an integer
 	with open('./crypto/n.txt', 'w') as f:
 		f.write(str(n))
 		f.close()
@@ -56,15 +61,8 @@ def generateKeys(genExponent=False):
 		f.write(str(d))
 		f.close()
 
-	print('\n==========================================================================================')
-	print('================================Values for RSA===================================')
-	print(f'p: {p}\n')
-	print(f'q: {q}\n')
-	print(f'Small prime, e: {"0x" + str(hex(e))[2:].zfill(64)}\n') # pad to 32 bytes
-	print(f'Modulus,     n: {hex(n)}\n')
-	print('==========================================================================================\n')
+	# convert to hex for display
+	n, e, d = hex(n), hex(e), hex(d)
 
-	print('==========================================================================================')
-	print('================================Private key (off-chain)===================================')
-	print(f'private key: {hex(d)}\n')
-	print('==========================================================================================')
+	# display RSA key data
+	output(n, e, d)

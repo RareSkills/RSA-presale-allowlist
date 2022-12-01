@@ -1,10 +1,14 @@
 from loadKeyPair import load
+from padHex import pad
 import csv
 import validAddress
 
 def generateSigs(file, outputFile, header):
     # load key values
     n, e, d = load()
+
+    # get length modulus hex data
+    keyHexLength = len(hex(n))-2
 
     # read csv file (first value must be the address)
     with open(file, 'r') as readOutput:
@@ -39,7 +43,8 @@ def generateSigs(file, outputFile, header):
 
                 # signature will always be appended as last value 
                 # i.e address, email, signature
-                line.append("0x" + str(hex(sig))[2:].zfill(512))    
+                # pad to appropriate hex bytes length (each 2 digits is one byte)
+                line.append(pad(hex(sig), keyHexLength))    
                 writer.writerow(line)
 
             # close csv file objects

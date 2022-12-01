@@ -4,14 +4,7 @@ import genSingularSignature
 import bulkGenSignatures
 import sys
 
-# mainRSA.py --genKeyPair -genExponent
-# if no -genKeyPair then use existing keys inside ./crypto dir
-# if no --genExponent then by default use e=3
-# mainRSA.py --genSingularSignature [address]
-# mainRSA.py --bulkGenSignatures [readingFile] [outputFile] [headerPresent (True or False)]
-# csv files and main files must be in same dir
-# crypto files must be in crypto folder
-
+# SEE README.MD - Off-Chain Scripts
 def main():
     flags = sys.argv
 
@@ -24,13 +17,21 @@ def main():
 
         # see if they want to generate a new key, if not then use stored keys in ./crypto dir
         if "--genKeyPair" in flags:
-            # if there is genExponent or not
-            if "--genExponent" in flags:
-                # generate a random exponent value
-                genRSAKeyPair.generateKeys(True)
-            else:
-                # use default exponent value of 3
-                genRSAKeyPair.generateKeys()
+            try:
+                bits = int(flags[2])
+                if not isinstance(bits, int):
+                    # if the argument after genKeyPair is not an integer revert
+                    raise Exception("Must Specify after --genKeyPair bit size of key to use!")
+
+                # if there is genExponent or not
+                if "--genExponent" in flags:
+                    # generate a random exponent value
+                    genRSAKeyPair.generateKeys(bits, True)
+                else:
+                    # use default exponent value of 3
+                    genRSAKeyPair.generateKeys(bits)
+            except:
+                raise Exception("Invalid arguments for key generation specified!")    
         else:
             # continue without generating a new key pair
             pass
@@ -72,8 +73,5 @@ def main():
             
     else:
         print("No arguments provided!")
-
-def help():
-    pass
 
 main()

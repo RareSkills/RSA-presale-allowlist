@@ -1,16 +1,12 @@
 from loadKeyPair import load
+from RSAOutput import output
 
 def viewKeys():
     # load key values
     n, e, d = load()
 
-    print('\n==========================================================================================')
-    print('================================Values for RSA===================================')
-    print(f'Small prime, e: {"0x" + str(hex(e))[2:].zfill(64)}\n') # pad to 32 bytes
-    print(f'Modulus,     n: {hex(n)}\n')
-    print('==========================================================================================\n')
+    # convert to hex for display
+    n, e, d = hex(n), hex(e), hex(d)
 
-    print('==========================================================================================')
-    print('================================Private key (off-chain)===================================')
-    print(f'private key: {hex(d)}\n')
-    print('==========================================================================================')
+    # display RSA key data
+    output(n, e, d)

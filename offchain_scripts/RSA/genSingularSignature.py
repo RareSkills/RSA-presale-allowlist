@@ -1,9 +1,13 @@
 from loadKeyPair import load
+from padHex import pad
 import validAddress
 
 def generateSig(address):
     # load key values
     n, e, d = load()
+
+    # get length modulus hex data
+    keyHexLength = len(hex(n))-2
 
     # check if valid eth address was passed in
     # else throw exception
@@ -24,6 +28,6 @@ def generateSig(address):
     print('==========================================================================================')
     print('================================Signature Gen and Decoding===================================')
     print(f'message: {address}\n')
-    print(f'signature: {"0x" + str(hex(sig))[2:].zfill(216)}\n') # pad to 512 bits
+    print(f'signature: {pad(hex(sig), keyHexLength)}\n') # pad to correct hex length
     print(f'decoded signature: {hex(decodedSignature)}\n')
     print('==========================================================================================\n')

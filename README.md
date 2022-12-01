@@ -13,7 +13,8 @@ The issues with the mapping, and merkle approach is a cap on scalability. Our ai
 the current best known approach the ECSDA Signature Verification.
 
 #### Our approach:
-- RSA 900 bit Metamorphic (Gas: 28,858)   
+- RSA 1024 bit Metamorphic (Gas: 27,056)
+- RSA 2000 bit Metamorphic (Gas: 29,234) 
 
 <hr>
 
@@ -29,11 +30,19 @@ The execution flow that one is expected to take is to generate an RSA key pair u
 Whitelisted users would then be distributed the signatures and they will input their signature into the verifySignatures function.
 
 ## Off-Chain Scripts
-    - python mainRSA.py --genKeyPair
-        - generates a new key pair with a fixed exponent of 3
+
+### Prerequistes 
+
+```
+pip install pycryptodome
+```
+
+### Command Line Arguments Guide
+    - python mainRSA.py --genKeyPair [Modulus key size (bits)]
+        - generates a new key pair of specified bits with a fixed exponent of 3
         - stores key values in RSA/crypto
-    - python mainRSA.py --genKeyPair --genExponent
-        - generates a new new key pair with a random exponent less than 3000
+    - python mainRSA.py --genKeyPair [ Modulus key size (bits)] --genExponent
+        - generates a new key pair of specified bits with a random exponent less than 30,000
         - note that the gas costs will increase if the exponent is above 3
         - stores key values in RSA/crypto
     - python mainRSA.py --viewKeyPair
@@ -46,7 +55,7 @@ Whitelisted users would then be distributed the signatures and they will input t
         - headPresent must have either True or False passed to it and indicates whether the csv file has a header row
  
 ## RSA (metamorphic modulus)
-This section includes an advanced explanation into the metamorphic contract factory process. A metamorphic contract is one that has the ability to be self destructed and deployed to the same address. How this is acheived is that we use the CREATE2 opcode which internally uses hash(0xFF, sender, salt, bytecode) to deterministically calculate the deployment address. However, the bytecode which we supply to create the contract will have an init code (code which is run during the constructor phase) that will call back on to the msg.sender (contract factory). The contract factory has a callback function which returns the raw bytecode of what is to be the runtime code of this instance of the metamorphic contract. It is the end of this runtime code where we append the public key(modulus). When the metamorphic contract receives this bytecode within it's constructor phase it will use CODECOPY to push it into memory then return it from memory (which finalizes the process of pushing this to the blockchain as the run time code).
+This section includes an advanced explanation into the metamorphic contract factory process. A metamorphic contract is one that has the ability to be self destructed and deployed to the same address. How this is acheived is that we use the CREATE2 opcode which internally uses hash(0xFF, sender, salt, bytecode) to deterministically calculate the deployment address. However, the bytecode which we supply to create the contract will have an init code (code which is run during the constructor phase) that will call back on to the msg.sender (contract factory) via a STATICCALL. The contract factory has a callback function which returns the raw bytecode of what is to be the runtime code of this instance of the metamorphic contract. It is the end of this runtime code where we append the public key(modulus). When the metamorphic contract receives this bytecode within it's constructor phase it pushes the returned data into memory. From where the metamorphic contract will return it from it's own memory, ending its constructor/init phase. (which finalizes the process of pushing this to the blockchain as the run time code).
 
 It's important to note this is not the standard process for deploying a metamorphic contract. We have modified the bytecode which is used to instantiate the metamorphic contract by having the contract factory send back the actual runtime code to use. The standard implementation involves deploying an 'implementation contract' which has the runtime code we would like the metamorphic contract to have. We store this address in the contract factory and return it to the metamorphic contract during the callback phase. From where the metamorphic contract will instead do an extcodecopy of the entire runtime code of the implementation contract. See the original implementation [here](https://github.com/0age/metamorphic)
 
@@ -74,8 +83,7 @@ Our approach cuts out the need of having to deploy the implementation contract e
 ## Tests
 Run tests: `npx hardhat test`
 
-![image](https://user-images.githubusercontent.com/106453938/204908051-8ec1fc7b-d0a8-4863-a825-5f02aff6dfad.png)
-
+![image](https://user-images.githubusercontent.com/106453938/205136488-d50514ee-c1f7-4b8b-abf1-b4d4d9aa7dbb.png)
 
 ## Working with the repo:
 

@@ -34,14 +34,14 @@ contract Rsa {
                 hex"630000000e60005261",
                 /** 
                  *   must be 0x40(pointer + bytes length) + contract code length  + modulus length
-                 *   fixed 4 bytes as no mod length over 4 bytes in size is expected
-                 *   rsa-2096 = 0x106 bytes length
+                 *   fixed 2 bytes as no mod length over 2 bytes in size is expected
+                 *   rsa-2048 = 0x0100 2 bytes length
                 */ 
                 uint16(0x77 + _modLength),  
                 hex"60006004601c335afa61",
                 /** 
                  *  contract code length + modulus length
-                 *  fixed 4 bytes
+                 *  fixed 2 bytes
                 */
                 uint16(0x37 + _modLength), 
                 hex"6040f3"

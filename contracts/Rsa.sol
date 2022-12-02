@@ -20,24 +20,49 @@ contract Rsa {
     /**
      * @dev See README.md for bytecode breakdown
      */
-    bytes private constant _metamorphicContractInitializationCode = (
-        hex"630000000e60005261017760006004601c335afa6101376040f3"
-    );
-
-    /**
-     * @dev METAMORPHIC_INIT_HASH is a calculated value based on '_metamorphicContractInitializationCode'
-     *      If the code is updated, be sure to recalculate the hash.
-     *
-     *      keccak256(abi.encodePacked(_metamorphicContractInitializationCode)
-     */
-    bytes32 private constant METAMORPHIC_INIT_HASH =
-        0xc24922855851a254a6fc4fc08e7ae8481ab58d05b2e4f607575d845e559d69ba;
+    bytes32 private immutable _metamorphicContractInitializationCode;
 
     //------------------------------------------------------------\\
     constructor(bytes32 _salt, uint256 _modLength) {
         owner = msg.sender;
         salt = _salt;
+        modLength = _modLength;
 
+        // contract runtime code length (without modulus) = 55 bytes (0x37)
+        bytes memory metamorphicInit = ( 
+            abi.encodePacked(
+                hex"630000000e60005261",
+                /** 
+                 *   must be 0x40(pointer + bytes length) + contract code length  + modulus length
+                 *   fixed 4 bytes as no mod length over 4 bytes in size is expected
+                 *   rsa-2096 = 0x106 bytes length
+                */ 
+                uint16(0x77 + _modLength),  
+                hex"60006004601c335afa61",
+                /** 
+                 *  contract code length + modulus length
+                 *  fixed 4 bytes
+                */
+                uint16(0x37 + _modLength), 
+                hex"6040f3"
+            )
+        );
+
+        // temp stack value used as we can't reference immutable in assembly block
+        bytes32 stackMetaInit;
+
+        assembly {
+            // use assembly to prune bytes to just get the bytes data
+            stackMetaInit := mload(add(metamorphicInit, 0x20))
+        }
+
+        // set immutable value
+        _metamorphicContractInitializationCode = stackMetaInit;
+
+        // hash of metamorphic bytecode
+        bytes32 METAMORPHIC_INIT_HASH = keccak256(abi.encodePacked(stackMetaInit));
+
+        // precompute the metamorphic contract address
         metamorphicContractAddress = (
             address(
                 uint160(
@@ -54,8 +79,6 @@ contract Rsa {
                 )
             )
         );
-
-        modLength = _modLength;
     }
 
     /**
@@ -75,9 +98,9 @@ contract Rsa {
 
         // Load immutable variable onto the stack
         address _metamorphicContractAddress = metamorphicContractAddress;
-
+        
+        // no need to update pointer as all memory written here can be overwriten with no consequence 
         assembly {
-            // no need to update pointer as all memory written here can be overwriten with no consequence 
             // Store in memory, length of BASE(signature), EXPONENT, MODULUS
             mstore(0x80, sig.length)
             mstore(add(0x80, 0x20), 0x20)
@@ -90,10 +113,17 @@ contract Rsa {
             mstore(add(0xe0, sig.length), EXPONENT)
 
             // Calculate where in memory to copy modulus to
-            // 0x37 -> offset of where the signature begins in the metamorphic bytecode
             let modPos := add(0xe0, add(sig.length, 0x20))
 
+            // 0x37 -> offset of where the signature begins in the metamorphic bytecode
             extcodecopy(_metamorphicContractAddress, modPos, 0x37, sig.length)
+
+            /** 
+             *  lengths of Signature + Base + Exponent = 0x60...
+             *  added with space of storage occupied by exponent, modulus, and signature...
+             *  Which is 0x20 + (sig.length * 2) as modulus length will always == signature length  
+            */
+            let callDataSize := add(0x80, mul(sig.length, 2))
 
             /**
              * @dev Call 0x05 precompile (modular exponentation)
@@ -105,20 +135,17 @@ contract Rsa {
              *   size of call data,
              *   pointer for where to copy return,
              *   size of return data
-             */
-
-            // lengths of Signature + Base + Exponent = 0x60...
-            // Added with space of storage occupied by exponent, modulus, and signature...
-            // Which is 0x20 + (sig.length * 2) as modulus length will always == signature length  
-            let callDataSize := add(0x80, mul(sig.length, 2))
+            */
 
             if iszero(staticcall(gas(), 0x05, 0x80, callDataSize, 0x80, sig.length)) {
                 revert(0, 0)
             }
 
-            // decoded signature is always stored in the last 32 bytes of return data
-            // sig.length + 0x80 is the end of the return data
-            // 0x60 + sig.length will give you the last 32 bytes 
+            /** 
+             *  decoded signature is always stored in the last 32 bytes of return data
+             *  sig.length + 0x80 is the end of the return data
+             *  0x60 + sig.length will give you the last 32 bytes 
+            */
             let decodedSig := mload(add(0x60, sig.length))
 
             // Check bit mask of return data. Ensure it is a valid address (first 12 bytes are zero)
@@ -158,8 +185,10 @@ contract Rsa {
      * https://github.com/RareSkills/RSA-presale-allowlist
      */
     function deployPublicKey(bytes calldata publicKey) external onlyOwner {
+        
         require(publicKey.length == modLength, "incorrect publicKey length");
 
+        // contract runtime code length (without modulus) = 55 bytes (0x37)
         bytes memory contractCode = abi.encodePacked(
             hex"3373",
             address(this),
@@ -172,24 +201,33 @@ contract Rsa {
         //Code to be returned from metamorphic init callback. See README for full explanation
         currentImplementationCode = contractCode;
 
-        // load immutable variable into memory
-        bytes memory metaMorphicInitCode = _metamorphicContractInitializationCode;
-
-        // Load immutable variable onto the stack
+        // Load immutable variables onto the stack
+        bytes32 metaMorphicInitCode = _metamorphicContractInitializationCode;
         bytes32 _salt = salt;
 
+        // address metamorphic contract will be deployed to
         address deployedMetamorphicContract;
 
         assembly {
+            // store in memory scratch space the init code
+            mstore(0x00, metaMorphicInitCode)
+            
+            /**
+             * CREATE2 args:
+             *  value: value in wei to send to the new account,
+             *  offset: byte offset in the memory in bytes, the initialisation code of the new account,
+             *  size: byte size to copy (size of the initialisation code),
+             *  salt: 32-byte value used to create the new account at a deterministic address
+            */
             deployedMetamorphicContract := create2(
                 0,
-                add(metaMorphicInitCode, 0x20),
-                mload(metaMorphicInitCode),
+                0x00,
+                0x20, // as init code is stored as bytes32
                 _salt
             )
         }
 
-        // Insure metamorphic deployment to address defines in constructor
+        // Ensure metamorphic deployment to address defined in constructor
         require(
             deployedMetamorphicContract == metamorphicContractAddress,
             "Failed to deploy the new metamorphic contract."
@@ -205,6 +243,8 @@ contract Rsa {
      *
      * https://github.com/RareSkills/RSA-presale-allowlist
      */
+
+    
     function destroyContract() external onlyOwner {
         (bool success, ) = metamorphicContractAddress.call("");
         require(success);

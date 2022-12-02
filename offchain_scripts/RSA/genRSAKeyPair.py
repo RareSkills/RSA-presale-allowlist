@@ -4,9 +4,9 @@ import Crypto.Util.number
 from RSAOutput import output
 
 def generateKeys(bits, genExponent=False):
-	if not bits % 4 == 0:
+	if not bits % 8 == 0:
 		# allows for generation of modulus in the correct format
-		raise Exception("Must specify a key size divisible by 4!")
+		raise Exception("Must specify a key size divisible by 8!")
 
 	# A 1024 bit modulus is the product of two 512 bit primes
 	# thus divide by 2 to get the bits needed for each prime

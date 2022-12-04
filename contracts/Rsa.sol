@@ -14,7 +14,7 @@ contract Rsa {
 
     bytes currentImplementationCode;
 
-    bytes32 private constant EXPONENT =
+    bytes32 public constant EXPONENT =
         0x0000000000000000000000000000000000000000000000000000000000000003;
 
     /**
@@ -36,33 +36,38 @@ contract Rsa {
                  *   must be 0x40(pointer + bytes length) + contract code length  + modulus length
                  *   fixed 2 bytes as no mod length over 2 bytes in size is expected
                  *   rsa-2048 = 0x0100 2 bytes length
-                */ 
+                 */ 
                 uint16(0x73 + _modLength),  
                 hex"60006004601c335afa61",
                 /** 
                  *  contract code length + modulus length
                  *  fixed 2 bytes
-                */
+                 */
                 uint16(0x33 + _modLength), 
                 hex"6040f3"
             )
         );
 
-        // temp stack value used as we can't reference immutable in assembly block
+        /**
+         * @dev stackMetaInit is a temp variable used to parse the length of the
+         *      metamorphic init code from the actual code. The is required as
+         *      'bytes memory metamorphicInit' has a dynamic length and will
+         *      prepend the value with it's length.
+         *
+         *      It is parsed in assembly and then set outside the block as
+         *      assembly access to immutable variables is not supported.
+         */
         bytes32 stackMetaInit;
-
         assembly {
             // use assembly to prune bytes to just get the bytes data
             stackMetaInit := mload(add(metamorphicInit, 0x20))
         }
-
-        // set immutable value
         _metamorphicContractInitializationCode = stackMetaInit;
 
-        // hash of metamorphic bytecode
+        // Hash of metamorphic bytecode.
         bytes32 METAMORPHIC_INIT_HASH = keccak256(abi.encodePacked(stackMetaInit));
 
-        // Calculate metamorphic contract address.
+        // Calculate and store as immutable, metamorphic contract address.
         metamorphicContractAddress = (
             address(
                 uint160(
@@ -81,17 +86,11 @@ contract Rsa {
         );
     }
 
-
-    modifier onlyOwner() {
-        require(owner == msg.sender);
-        _;
-    }
-
     /**
-     * @notice 'verifySignature' is the user facing function used to validate 
+     * @notice 'verifySignature' is the user facing function used to validate
      *          signed messages.
      *
-     * @param  'sig' length must always be equal to the length of the public 
+     * @param  'sig' length must always be equal to the length of the public
      *          key(modulus).
      *
      * @dev     Exponent is hardcoded at top of contract. This may be altered
@@ -105,59 +104,72 @@ contract Rsa {
     function verifySignature(bytes calldata sig) external view returns (bool) {
         require(sig.length == modLength);
 
-        // Load immutable variable onto the stack
+        // Load immutable variable onto the stack.
         address _metamorphicContractAddress = metamorphicContractAddress;
         
         // no need to update pointer as all memory written here can be overwriten with no consequence 
         assembly {
-            // Store in memory, length of BASE(signature), EXPONENT, MODULUS
+            /**
+             * @dev No need to update free memory pointer as all memory written here
+             *      can be overwriten with no consequence.
+             *
+             * @dev Store in memory, length of BASE(signature), EXPONENT, MODULUS.
+             */
             mstore(0x80, sig.length)
             mstore(add(0x80, 0x20), 0x20)
             mstore(add(0x80, 0x40), sig.length)
 
-            // BASE: The signature
+            // Store in memory, BASE(signature), EXPONENT, MODULUS(public key).
             calldatacopy(0xe0, sig.offset, sig.length)
-
-            // EXPONENT hardcoded to 3
             mstore(add(0xe0, sig.length), EXPONENT)
 
-            // Calculate where in memory to copy modulus to
+            /**
+             * @dev Calculate where in memory to copy modulus to (modPos). This must
+             *      be dynamically determined as various size of signature may be used.
+             */
             let modPos := add(0xe0, add(sig.length, 0x20))
 
-            // 0x33 -> offset of where the signature begins in the metamorphic bytecode
-            extcodecopy(_metamorphicContractAddress, modPos, 0x33, sig.length)
+            /**
+             * @dev 0x33 is a precalulated value that is the offset of where the
+             *      signature begins in the metamorphic bytecode.
+             */
+            extcodecopy(_metamorphicContractAddress, modPos, 0x33, sig.length)            
 
-            /** 
-             *  lengths of Signature + Base + Exponent = 0x60...
-             *  added with space of storage occupied by exponent, modulus, and signature...
-             *  Which is 0x20 + (sig.length * 2) as modulus length will always == signature length  
-            */
+            /**
+             * @dev callDataSize must be dynamically calculated. It follows the
+             *      previously mentioned memory layout including the length and
+             *      value of the sig, exponent and modulus.
+             */
             let callDataSize := add(0x80, mul(sig.length, 2))
 
             /**
-             * @dev Call 0x05 precompile (modular exponentation)
+             * @dev Call 0x05 precompile (modular exponentation) w/ the following
+             *      args and revert on failure.
              *
-             * Args:
-             *   gas,
-             *   precomipled contract address,
-             *   memory pointer of begin of calldata,
-             *   size of call data,
-             *   pointer for where to copy return,
-             *   size of return data
-            */
-
+             *      Args:
+             *      gas,
+             *      precomipled contract address,
+             *      memory pointer of begin of calldata,
+             *      size of call data (callDataSize),
+             *      pointer for where to copy return,
+             *      size of return data
+             */
             if iszero(staticcall(gas(), 0x05, 0x80, callDataSize, 0x80, sig.length)) {
                 revert(0, 0)
             }
 
-            /** 
-             *  decoded signature is always stored in the last 32 bytes of return data
-             *  sig.length + 0x80 is the end of the return data
-             *  0x60 + sig.length will give you the last 32 bytes 
-            */
+            /**
+             * @dev Parse return value from modular exponentation calculation.
+             *      This calculation will load the correct 32bytes of memory
+             *      onto the stack.
+             */
             let decodedSig := mload(add(0x60, sig.length))
 
-            // Check bit mask of return data. Ensure it is a valid address (first 12 bytes are zero)
+            /**
+             * @dev Use bit mask of decodedSig to ensure it is a valid address.
+             *      If the user has passed a valid sig, this will be a 20 byte
+             *      address, left padded to 32 bytes, and revert if not valid address.
+             */
             if iszero(
                 iszero(
                     and(
@@ -181,15 +193,20 @@ contract Rsa {
         }
     }
 
+    modifier onlyOwner() {
+        require(owner == msg.sender);
+        _;
+    }
+
     /**
-     * @notice 'deployPublicKey' is used in initializing the contract that hold the RSA modulus (n)
+     * @notice 'deployPublicKey' is used in initializing the metamorphic contract that
+     *          stores the RSA modulus, n (public key).
      *
-     * @dev See Repo README for guide to generating public key
+     * @dev     See Repo README for guide to generating public key via python script.
      *
      * https://github.com/RareSkills/RSA-presale-allowlist
      */
     function deployPublicKey(bytes calldata publicKey) external onlyOwner {
-        
         require(publicKey.length == modLength, "incorrect publicKey length");
 
         // contract runtime code length (without modulus) = 51 bytes (0x33)
@@ -202,18 +219,22 @@ contract Rsa {
             publicKey
         ); 
 
-        //Code to be returned from metamorphic init callback. See README for full explanation
+        // Code to be returned from metamorphic init callback. See README for explanation.
         currentImplementationCode = contractCode;
 
-        // Load immutable variables onto the stack
+        // Load immutable variables onto the stack.
         bytes32 metaMorphicInitCode = _metamorphicContractInitializationCode;
         bytes32 _salt = salt;
 
-        // address metamorphic contract will be deployed to
+        // Address metamorphic contract will be deployed to.
         address deployedMetamorphicContract;
 
         assembly {
-            // store in memory scratch space the init code
+            /**
+             * Store metamorphic init code in scratch memory space.
+             * This is previously dynamically created in constructor (based on public key size
+             * and stored as an immutable variable.
+             */
             mstore(0x00, metaMorphicInitCode)
             
             /**
@@ -221,8 +242,8 @@ contract Rsa {
              *  value: value in wei to send to the new account,
              *  offset: byte offset in the memory in bytes, the initialisation code of the new account,
              *  size: byte size to copy (size of the initialisation code),
-             *  salt: 32-byte value used to create the new account at a deterministic address
-            */
+             *  salt: 32-byte value used to create the new contract at a deterministic address
+             */
             deployedMetamorphicContract := create2(
                 0,
                 0x00,
@@ -231,17 +252,17 @@ contract Rsa {
             )
         }
 
-        // Ensure metamorphic deployment to address calculated in constructor.
+        // Ensure metamorphic deployment to address as calculated in constructor.
         require(
             deployedMetamorphicContract == metamorphicContractAddress,
-            "Failed to deploy the new metamorphic contract to correct address."
+            "Failed to deploy the new metamorphic contract."
         );
 
         emit Metamorphosed(deployedMetamorphicContract);
     }
 
     /**
-     * @notice 'destroyContract' must be called before redeployment of public 
+     * @notice 'destroyContract' must be called before redeployment of public
      *          key contract.
      *
      * @dev     See Repo README.md process walk-through.
@@ -254,7 +275,7 @@ contract Rsa {
     }
 
     /**
-     * @notice 'callback19F236F3' is a critical step in the initialization of a 
+     * @notice 'callback19F236F3' is a critical step in the initialization of a
      *          metamorphic contract.
      *
      * @dev     The function selector for this is '0x0000000e'

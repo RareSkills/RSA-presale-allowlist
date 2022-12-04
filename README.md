@@ -85,14 +85,14 @@ Our approach cuts out the need of having to deploy the implementation contract e
 #### Metamorphic runtime code:
 ```
     bytecode:
-        33[msg.sender]14601f5760006000f35b73[CONTRACT FACTORY]fffe[DYANMIC MODULUS APPENDED AT THE END]
+        33[msg.sender]14601f5760006000f35b73[CONTRACT FACTORY]fffe[DYNAMIC MODULUS APPENDED AT THE END]
 
     CALLER                      -> Push msg.sender to stack  
     PUSH20 [CONTRACT FACTORY]   -> Push contract factory address 
     EQ                          -> If msg.sender == contract factory address, return 1
     PUSH1 0x1b                  -> Push JUMPDEST location
     JUMPI                       -> If EQ is true go to JUMPDEST
-    INVALID                     -> End Execution (If line reached they were not authroized to destruct this contract)
+    INVALID                     -> End Execution (If line reached they were not authorized to destruct this contract)
     JUMPDEST                    -> Came here from JUMP
     PUSH20 [CONTRACT FACTORY]   -> Address to send funds to
     SELFDESTRUCT                -> Delete contract code from the blockchain and send funds to previously pushed address and end execution
@@ -103,7 +103,7 @@ Our approach cuts out the need of having to deploy the implementation contract e
 ## Tests
 Run tests: `npx hardhat test`
 
-![image](https://user-images.githubusercontent.com/106453938/205217581-16c8312c-668c-437c-88ae-2172df153f1c.png)
+![image](https://user-images.githubusercontent.com/106453938/205508135-1d82b505-1b47-4db2-83ab-0584cbf408fb.png)
 
 ## Working with the repo:
 

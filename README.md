@@ -13,8 +13,8 @@ The issues with the mapping, and merkle approach is a cap on scalability. Our ai
 the current best known approach the ECSDA Signature Verification.
 
 #### Our approach:
-- RSA 896 bit Metamorphic (Gas: 26,850)
-- RSA 960 bit Metamorphic (Gas: 26,925)
+- RSA 896 bit Metamorphic  (Gas: 26,850)
+- RSA 960 bit Metamorphic  (Gas: 26,925)
 - RSA 1024 bit Metamorphic (Gas: 27,033)
 - RSA 2048 bit Metamorphic (Gas: 29,271) 
 
@@ -69,14 +69,14 @@ Our approach cuts out the need of having to deploy the implementation contract e
     PUSH4 0x0000000e                  -> push selector
     PUSH1 0x00                        -> store from beginning of memory
     MSTORE                            -> store using previous 2 arguments MSTORE(0x00, selector)
-    PUSH2 [uint16(0x77 + _modLength)] -> byte size of return data to copy  
+    PUSH2 [uint16(0x73 + _modLength)] -> byte size of return data to copy (get only the 4 bytes of selector in memory)  
     PUSH1 0x00                        -> where in memory to copy the return data
     PUSH1 0x04                        -> size of calldata argument
     PUSH1 0x1c                        -> where in memory to start copying the calldata arguments
     CALLER                            -> msg.sender (initiating contract)
     GAS                               -> forward all current gas
     STATICCALL                        -> (GAS, msg.sender, memory offset, memory to copy size, memory offset to copy to,byte size of return data to copy)
-    PUSH2 [uint16(0x37 + _modLength)] -> size of return data
+    PUSH2 [uint16(0x33 + _modLength)] -> size of return data
     PUSH1 0x40                        -> where to start copying the return data from (skip bytes ptr,length)
     RETURN                            -> will be this contracts new bytecode
 
@@ -90,12 +90,9 @@ Our approach cuts out the need of having to deploy the implementation contract e
     CALLER                      -> Push msg.sender to stack  
     PUSH20 [CONTRACT FACTORY]   -> Push contract factory address 
     EQ                          -> If msg.sender == contract factory address, return 1
-    PUSH1 0x1f                  -> Push JUMPDEST location
+    PUSH1 0x1b                  -> Push JUMPDEST location
     JUMPI                       -> If EQ is true go to JUMPDEST
-    /* note: make the return an invalid op code instead */
-    PUSH1 0x00                  -> Byte size for return
-    PUSH1 0x00                  -> Offset in memory to copy from
-    RETURN                      -> Returns no data, ends execution
+    INVALID                     -> End Execution (If line reached they were not authroized to destruct this contract)
     JUMPDEST                    -> Came here from JUMP
     PUSH20 [CONTRACT FACTORY]   -> Address to send funds to
     SELFDESTRUCT                -> Delete contract code from the blockchain and send funds to previously pushed address and end execution

@@ -28,7 +28,7 @@ contract Rsa {
         salt = _salt;
         modLength = _modLength;
 
-        // contract runtime code length (without modulus) = 55 bytes (0x37)
+        // contract runtime code length (without modulus) = 51 bytes (0x33)
         bytes memory metamorphicInit = ( 
             abi.encodePacked(
                 hex"630000000e60005261",
@@ -37,13 +37,13 @@ contract Rsa {
                  *   fixed 2 bytes as no mod length over 2 bytes in size is expected
                  *   rsa-2048 = 0x0100 2 bytes length
                 */ 
-                uint16(0x77 + _modLength),  
+                uint16(0x73 + _modLength),  
                 hex"60006004601c335afa61",
                 /** 
                  *  contract code length + modulus length
                  *  fixed 2 bytes
                 */
-                uint16(0x37 + _modLength), 
+                uint16(0x33 + _modLength), 
                 hex"6040f3"
             )
         );
@@ -115,8 +115,8 @@ contract Rsa {
             // Calculate where in memory to copy modulus to
             let modPos := add(0xe0, add(sig.length, 0x20))
 
-            // 0x37 -> offset of where the signature begins in the metamorphic bytecode
-            extcodecopy(_metamorphicContractAddress, modPos, 0x37, sig.length)
+            // 0x33 -> offset of where the signature begins in the metamorphic bytecode
+            extcodecopy(_metamorphicContractAddress, modPos, 0x33, sig.length)
 
             /** 
              *  lengths of Signature + Base + Exponent = 0x60...
@@ -188,15 +188,15 @@ contract Rsa {
         
         require(publicKey.length == modLength, "incorrect publicKey length");
 
-        // contract runtime code length (without modulus) = 55 bytes (0x37)
+        // contract runtime code length (without modulus) = 51 bytes (0x33)
         bytes memory contractCode = abi.encodePacked(
             hex"3373",
             address(this),
-            hex"14601f5760006000f35b73",
+            hex"14601b57fe5b73",
             address(this),
             hex"fffe",
             publicKey
-        );
+        ); 
 
         //Code to be returned from metamorphic init callback. See README for full explanation
         currentImplementationCode = contractCode;

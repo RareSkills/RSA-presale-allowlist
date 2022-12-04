@@ -29,21 +29,21 @@ contract Rsa {
         modLength = _modLength;
 
         // contract runtime code length (without modulus) = 51 bytes (0x33)
-        bytes memory metamorphicInit = ( 
+        bytes memory metamorphicInit = (
             abi.encodePacked(
                 hex"630000000e60005261",
-                /** 
+                /**
                  *   must be 0x40(pointer + bytes length) + contract code length  + modulus length
                  *   fixed 2 bytes as no mod length over 2 bytes in size is expected
                  *   rsa-2048 = 0x0100 2 bytes length
-                 */ 
-                uint16(0x73 + _modLength),  
+                 */
+                uint16(0x73 + _modLength),
                 hex"60006004601c335afa61",
-                /** 
+                /**
                  *  contract code length + modulus length
                  *  fixed 2 bytes
                  */
-                uint16(0x33 + _modLength), 
+                uint16(0x33 + _modLength),
                 hex"6040f3"
             )
         );
@@ -65,7 +65,9 @@ contract Rsa {
         _metamorphicContractInitializationCode = stackMetaInit;
 
         // Hash of metamorphic bytecode.
-        bytes32 METAMORPHIC_INIT_HASH = keccak256(abi.encodePacked(stackMetaInit));
+        bytes32 METAMORPHIC_INIT_HASH = keccak256(
+            abi.encodePacked(stackMetaInit)
+        );
 
         // Calculate and store as immutable, metamorphic contract address.
         metamorphicContractAddress = (
@@ -106,8 +108,8 @@ contract Rsa {
 
         // Load immutable variable onto the stack.
         address _metamorphicContractAddress = metamorphicContractAddress;
-        
-        // no need to update pointer as all memory written here can be overwriten with no consequence 
+
+        // no need to update pointer as all memory written here can be overwriten with no consequence
         assembly {
             /**
              * @dev No need to update free memory pointer as all memory written here
@@ -133,7 +135,7 @@ contract Rsa {
              * @dev 0x33 is a precalulated value that is the offset of where the
              *      signature begins in the metamorphic bytecode.
              */
-            extcodecopy(_metamorphicContractAddress, modPos, 0x33, sig.length)            
+            extcodecopy(_metamorphicContractAddress, modPos, 0x33, sig.length)
 
             /**
              * @dev callDataSize must be dynamically calculated. It follows the
@@ -154,7 +156,9 @@ contract Rsa {
              *      pointer for where to copy return,
              *      size of return data
              */
-            if iszero(staticcall(gas(), 0x05, 0x80, callDataSize, 0x80, sig.length)) {
+            if iszero(
+                staticcall(gas(), 0x05, 0x80, callDataSize, 0x80, sig.length)
+            ) {
                 revert(0, 0)
             }
 
@@ -217,7 +221,7 @@ contract Rsa {
             address(this),
             hex"fffe",
             publicKey
-        ); 
+        );
 
         // Code to be returned from metamorphic init callback. See README for explanation.
         currentImplementationCode = contractCode;
@@ -236,7 +240,7 @@ contract Rsa {
              * and stored as an immutable variable.
              */
             mstore(0x00, metaMorphicInitCode)
-            
+
             /**
              * CREATE2 args:
              *  value: value in wei to send to the new account,

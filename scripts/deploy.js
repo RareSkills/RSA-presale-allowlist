@@ -1,17 +1,34 @@
-// We require the Hardhat Runtime Environment explicitly here. This is optional
-// but useful for running the script in a standalone fashion through `node <script>`.
-//
-// You can also run a script with `npx hardhat run <script>`. If you do that, Hardhat
-// will compile your contracts, add the Hardhat Runtime Environment's members to the
-// global scope, and execute the script.
-const hre = require("hardhat");
-const deployment = require("./deploymentCodeCopyHelper.js");
-
 async function main() {
-  // run deployment code for RsaCodeCopydemo.sol with modified bytecode
-  // (modulus added at the end of bytecode)
-  const contract = await deployment.helper();
-  console.log("contract address:", contract.address);
+  const [deployer] = await ethers.getSigners();
+
+  console.log("Deploying contracts with the account:", deployer.address);
+
+  console.log("Account balance:", (await deployer.getBalance()).toString());
+
+  /**
+   * Fill in strings below with desired values
+   * Generate PUBLIC_KEY via the offchain scripts (see README.md)
+   */
+
+  // Must be a 32 byte hex value
+  const SALT = "";
+
+  // Bytes length of modulus
+  const MOD_LENGTH = "";
+
+  // Modulus
+  const PUBLIC_KEY = "";
+
+  const RsaFactory = await ethers.getContractFactory('Rsa');
+  const rsa = await RsaFactory.deploy(SALT, MOD_LENGTH);
+
+  await rsa.connect(owner).deployPublicKey(PUBLIC_KEY);
+
+  const metamorphicContractAddress =
+    await rsa.metamorphicContractAddress();
+
+  console.log("RSA Contract address:", rsa.address);
+  console.log("Metamorphic Contract address:", metamorphicContractAddress);
 }
 
 main()

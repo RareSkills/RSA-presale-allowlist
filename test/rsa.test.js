@@ -1,12 +1,9 @@
 const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers");
 const { expect } = require("chai");
 
-// Function selector for 'verifySignature(bytes)'
-const verifySignatureSelector = "0xf80af984";
-
 /**
- * MOD_LENGTH refers to byte size of public key
- * All valid signatures generated for hardhat accounts[1]
+ * MOD_LENGTH refers to byte size of public key.
+ * All valid signatures generated for hardhat accounts[1] (named user1).
  */
 
 /* RSA-896 Parameters */
@@ -34,6 +31,12 @@ const TEST_PUBLIC_KEY_1024 =
 const TEST_SIG_1024 =
   "0x939f58d488df3fca13f99077a6df35675ae392ce346968f735d71b5bd7d7c03ba48a0318d33d73af7a9f79dfa6b47bbe91fe3ecd1edaeaae9eb684677c0037a922b880a580349b728abc0297048fc08e229393024e0b1a89aa11a1a3f993d6bfec4af960e4ad7af62bbd451773bd3675550219e69fccca4ed6ac81ef8a7b04d5";
 
+const UPDATED_PUBLIC_KEY_1024 =
+  "0x86f375b608fcb0577503e38c171a084d857d3506b79d948980eacca32855eece6b59485fe81330fc6c1e0daf8f3a94b8a02429c40336aed7537b8c4c90c10d3704a86e64834ef19974cddec67d4e090fbdeaba2b3f5e0e9227b6ef8831a01db716824471d0537a8a37352768d0538c1b654104e474fb628ac09a76d9a514dbf9";
+
+const UPDATED_SIG_1024 =
+  "0x454b4350dae44f1ce50ccf23ce24b227f059e6619ea4384625c382d1ab6391f201c7b364db611e9c7de372e06b99c7a823b9ee0c8d85819e1db5b19ebbedfdb5f60098970982794f24654837aa184d637e01a0f62244cc73a68b907d86178ddaadf8c7a351c04ae3da5207ba0c1c58ab56120d23fdd318387cdd1a4efda08f3c";
+
 const MOD_LENGTH_1024 = 128;
 
 /* RSA-2048 Parameters */
@@ -45,9 +48,14 @@ const TEST_SIG_2048 =
 
 const MOD_LENGTH_2048 = 256;
 
-/* RSA-960 Parameters */
 const INVALID_SIG =
   "0x0daed3720f1e753c42a2b471bc492a395fae088713a016341d362d8aecf11364c5f39e14ea923de8fa18d312d2d0a0582b0a54a836600db0c75ca95005cbf6b9612116f59b1defeeccfa9f5868f06cbd1a7ac020fcea218a45aa8067361c68eb91b33d132bcab887e7006f62abb4458afe0878e2a1a1dfcdeba5b6107856f479";
+
+const SALT =
+  "0x2323232323232323232323232323232323232323232323232323232323232323";
+
+// Function selector for 'verifySignature(bytes)' used in constructing raw tx for using access list.
+const verifySignatureSelector = "0xf80af984";
 
 async function variableSigGasEstimate(
   user1,
@@ -79,17 +87,14 @@ async function variableSigGasEstimate(
   console.log("\tEstimated Gas: " + gasEstimate.gasLimit.toString());
 }
 
-describe("RSA presale allowlist", function () {
+describe("RSA presale", function () {
   async function deployFixture() {
     const [owner, user1, user2] = await ethers.getSigners();
 
     const RsaFactory = await ethers.getContractFactory("Rsa");
 
     /* deploy rsa-896 */
-    const rsa896 = await RsaFactory.deploy(
-      "0x2323232323232323232323232323232323232323232323232323232323232323",
-      MOD_LENGTH_896
-    );
+    const rsa896 = await RsaFactory.deploy(SALT, MOD_LENGTH_896);
 
     await rsa896.connect(owner).deployPublicKey(TEST_PUBLIC_KEY_896);
 
@@ -97,10 +102,7 @@ describe("RSA presale allowlist", function () {
       await rsa896.metamorphicContractAddress();
 
     /* deploy rsa-960 */
-    const rsa960 = await RsaFactory.deploy(
-      "0x2323232323232323232323232323232323232323232323232323232323232323",
-      MOD_LENGTH_960
-    );
+    const rsa960 = await RsaFactory.deploy(SALT, MOD_LENGTH_960);
 
     await rsa960.connect(owner).deployPublicKey(TEST_PUBLIC_KEY_960);
 
@@ -108,10 +110,7 @@ describe("RSA presale allowlist", function () {
       await rsa960.metamorphicContractAddress();
 
     /* deploy rsa-1024 */
-    const rsa1024 = await RsaFactory.deploy(
-      "0x2323232323232323232323232323232323232323232323232323232323232323",
-      MOD_LENGTH_1024
-    );
+    const rsa1024 = await RsaFactory.deploy(SALT, MOD_LENGTH_1024);
 
     await rsa1024.connect(owner).deployPublicKey(TEST_PUBLIC_KEY_1024);
 
@@ -119,10 +118,7 @@ describe("RSA presale allowlist", function () {
       await rsa1024.metamorphicContractAddress();
 
     /* deploy rsa-2048 */
-    const rsa2048 = await RsaFactory.deploy(
-      "0x2323232323232323232323232323232323232323232323232323232323232323",
-      MOD_LENGTH_2048
-    );
+    const rsa2048 = await RsaFactory.deploy(SALT, MOD_LENGTH_2048);
 
     await rsa2048.connect(owner).deployPublicKey(TEST_PUBLIC_KEY_2048);
 
@@ -144,8 +140,8 @@ describe("RSA presale allowlist", function () {
     };
   }
 
-  describe("Verify signature - With  Gas Estimate", function () {
-    it("Should ensure verifySignature returns true (896 bit)", async function () {
+  describe("Verify various size signature - Gas Estimate benchmarks:", function () {
+    it("Should ensure verifySignature returns true w/ valid sig(896 bit)", async function () {
       const { rsa896, user1, metamorphicContractAddress896 } =
         await loadFixture(deployFixture);
 
@@ -162,7 +158,7 @@ describe("RSA presale allowlist", function () {
 
       expect(verified).to.equal(true);
     });
-    it("Should ensure verifySignature returns true (960 bit)", async function () {
+    it("Should ensure verifySignature returns true w/ valid sig(960 bit)", async function () {
       const { rsa960, user1, metamorphicContractAddress960 } =
         await loadFixture(deployFixture);
 
@@ -179,7 +175,7 @@ describe("RSA presale allowlist", function () {
 
       expect(verified).to.equal(true);
     });
-    it("Should ensure verifySignature returns true (1024 bit)", async function () {
+    it("Should ensure verifySignature returns true w/ valid sig(1024 bit)", async function () {
       const { rsa1024, user1, metamorphicContractAddress1024 } =
         await loadFixture(deployFixture);
 
@@ -196,7 +192,7 @@ describe("RSA presale allowlist", function () {
 
       expect(verified).to.equal(true);
     });
-    it("Should ensure verifySignature returns true (2048 bit)", async function () {
+    it("Should ensure verifySignature returns true w/ valid sig(2048 bit)", async function () {
       const { rsa2048, user1, metamorphicContractAddress2048 } =
         await loadFixture(deployFixture);
 
@@ -213,43 +209,53 @@ describe("RSA presale allowlist", function () {
 
       expect(verified).to.equal(true);
     });
-    it("Should ensure user2 cannot use invalid signature", async function () {
+  });
+  describe("Business logic:", function () {
+    it("Should reject invalid signature (wrong user)", async function () {
       const { rsa1024, user2 } = await loadFixture(deployFixture);
 
       expect(
         await rsa1024.connect(user2).verifySignature(TEST_SIG_1024)
       ).to.equal(false);
     });
-    it("Should ensure invalid signature causes revert", async function () {
+    it("Should reject invalid signature (invalid sig)", async function () {
       const { rsa1024, user2 } = await loadFixture(deployFixture);
 
       await expect(rsa1024.connect(user2).verifySignature(INVALID_SIG)).to.be
         .rejected;
     });
-    it("Should selfdestruct and redeploy to same address \n\t\t\
-          w/ different key, and valid verification", async function () {
+    it("Should selfdestruct and redeploy to same address (new keys/sig)", async function () {
       const { rsa1024, owner, user1 } = await loadFixture(deployFixture);
 
-      /* self destruct and a verify false with correct sig */
+      /**
+       * This will test the following work flow:
+       *
+       * - The contract has been deployed w/ valid keys/signatures (see fixture)
+       * - User1 will be verified with valid keys
+       * - The owner will self destruct metamorphic contract (public key)
+       * - User1 will prove their keys are no longer functional
+       * - The owner will redeploy metamorphic contract w/ new public key
+       * - User1 will be verified with new valid key
+       */
+
+      const firstValidation = await rsa1024
+        .connect(user1)
+        .verifySignature(TEST_SIG_1024);
+      expect(firstValidation).equal(true);
+
       expect(await rsa1024.connect(owner).destroyContract()).to.not.be.reverted;
 
-      expect(
-        await rsa1024.connect(user1).verifySignature(TEST_SIG_1024)
-      ).to.equal(false);
+      const secondValidation = await rsa1024
+        .connect(user1)
+        .verifySignature(TEST_SIG_1024);
+      expect(secondValidation).equal(false);
 
-      /* redeploy and verify true */
+      await rsa1024.connect(owner).deployPublicKey(UPDATED_PUBLIC_KEY_1024);
 
-      // Different Public Key with same bits
-      const NEW_PUBLIC_KEY_1024 = "0x86f375b608fcb0577503e38c171a084d857d3506b79d948980eacca32855eece6b59485fe81330fc6c1e0daf8f3a94b8a02429c40336aed7537b8c4c90c10d3704a86e64834ef19974cddec67d4e090fbdeaba2b3f5e0e9227b6ef8831a01db716824471d0537a8a37352768d0538c1b654104e474fb628ac09a76d9a514dbf9";
-
-      // sign generated to match new public key for hardhat accounts[1]
-      const NEW_SIG_1024 = "0x454b4350dae44f1ce50ccf23ce24b227f059e6619ea4384625c382d1ab6391f201c7b364db611e9c7de372e06b99c7a823b9ee0c8d85819e1db5b19ebbedfdb5f60098970982794f24654837aa184d637e01a0f62244cc73a68b907d86178ddaadf8c7a351c04ae3da5207ba0c1c58ab56120d23fdd318387cdd1a4efda08f3c";
-
-      await rsa1024.connect(owner).deployPublicKey(NEW_PUBLIC_KEY_1024);
-
-      expect(
-        await rsa1024.connect(user1).verifySignature(NEW_SIG_1024)
-      ).to.equal(true);
+      const thirdValidation = await rsa1024
+        .connect(user1)
+        .verifySignature(UPDATED_SIG_1024);
+      expect(thirdValidation).equal(true);
     });
   });
 });

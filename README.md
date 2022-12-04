@@ -103,7 +103,7 @@ Our approach cuts out the need of having to deploy the implementation contract e
 ## Tests
 Run tests: `npx hardhat test`
 
-![image](https://user-images.githubusercontent.com/106453938/205508135-1d82b505-1b47-4db2-83ab-0584cbf408fb.png)
+![Screen Shot 2022-12-04 at 6 31 34 PM](https://user-images.githubusercontent.com/22263098/205522444-ce8dae35-981b-41d9-8387-29d41f621333.png)
 
 ## Working with the repo:
 

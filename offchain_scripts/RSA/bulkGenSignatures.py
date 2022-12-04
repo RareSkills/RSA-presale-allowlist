@@ -1,14 +1,17 @@
 from loadKeyPair import load
-from padHex import pad
+from padHexToValue import padTo
+from validAddress import checkValidity
+from roundToEvenInt import roundEven
 import csv
-import validAddress
+
 
 def generateSigs(file, outputFile, header):
     # load key values
     n, e, d = load()
 
     # get length modulus hex data
-    keyHexLength = len(hex(n))-2
+    # prune '0x'
+    keyHexLength = roundEven(len(hex(n))-2) 
 
     # read csv file (first value must be the address)
     with open(file, 'r') as readOutput:
@@ -29,7 +32,7 @@ def generateSigs(file, outputFile, header):
 
                 # check if valid eth address was passed in
                 # else throw exception
-                validAddress.checkValidity(address) 
+                checkValidity(address) 
 
                 # generate signature for address
                 message = int(address, 16)
@@ -44,7 +47,7 @@ def generateSigs(file, outputFile, header):
                 # signature will always be appended as last value 
                 # i.e address, email, signature
                 # pad to appropriate hex bytes length (each 2 digits is one byte)
-                line.append(pad(hex(sig), keyHexLength))    
+                line.append(padTo(hex(sig), keyHexLength))    
                 writer.writerow(line)
 
             # close csv file objects

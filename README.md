@@ -13,8 +13,10 @@ The issues with the mapping, and merkle approach is a cap on scalability. Our ai
 the current best known approach the ECSDA Signature Verification.
 
 #### Our approach:
+- RSA 896 bit Metamorphic  (Gas: 26,850)
+- RSA 960 bit Metamorphic  (Gas: 26,925)
 - RSA 1024 bit Metamorphic (Gas: 27,033)
-- RSA 2000 bit Metamorphic (Gas: 29,211) 
+- RSA 2048 bit Metamorphic (Gas: 29,271) 
 
 <hr>
 
@@ -61,29 +63,47 @@ It's important to note this is not the standard process for deploying a metamorp
 
 Our approach cuts out the need of having to deploy the implementation contract entirely, giving us significant gas savings.
 
-#### Modified metamorphic init code:
+#### Modified metamorphic init code(See contract constructor):
 ```
  
-    PUSH4 0x0000000e    -> push selector
-    PUSH1 0x00          -> store from beginning of memory
-    MSTORE              -> store using previous 2 arguments MSTORE(0x00, selector)
-    PUSH2 0x0177        -> byte size of return data to copy
-    PUSH1 0x00          -> where in memory to copy the return data
-    PUSH1 0x04          -> size of calldata argument
-    PUSH1 0x1c          -> where in memory to start copying the calldata arguments
-    CALLER              -> msg.sender (initiating contract)
-    GAS                 -> forward all current gas
-    STATICCALL          -> (GAS, msg.sender, memory offset, memory to copy size, memory offset to copy to, byte size of return data to copy)
-    PUSH2 0x0137        -> size of return data
-    PUSH1 0x40          -> where to start copying the return data from
-    RETURN              -> will be this contracts new bytecode
-  
+    PUSH4 0x0000000e                  -> push selector
+    PUSH1 0x00                        -> store from beginning of memory
+    MSTORE                            -> store using previous 2 arguments MSTORE(0x00, selector)
+    PUSH2 [uint16(0x73 + _modLength)] -> byte size of return data to copy (get only the 4 bytes of selector in memory)  
+    PUSH1 0x00                        -> where in memory to copy the return data
+    PUSH1 0x04                        -> size of calldata argument
+    PUSH1 0x1c                        -> where in memory to start copying the calldata arguments
+    CALLER                            -> msg.sender (initiating contract)
+    GAS                               -> forward all current gas
+    STATICCALL                        -> (GAS, msg.sender, memory offset, memory to copy size, memory offset to copy to,byte size of return data to copy)
+    PUSH2 [uint16(0x33 + _modLength)] -> size of return data
+    PUSH1 0x40                        -> where to start copying the return data from (skip bytes ptr,length)
+    RETURN                            -> will be this contracts new bytecode
+
+```
+
+#### Metamorphic runtime code:
+```
+    bytecode:
+        33[msg.sender]14601f5760006000f35b73[CONTRACT FACTORY]fffe[DYANMIC MODULUS APPENDED AT THE END]
+
+    CALLER                      -> Push msg.sender to stack  
+    PUSH20 [CONTRACT FACTORY]   -> Push contract factory address 
+    EQ                          -> If msg.sender == contract factory address, return 1
+    PUSH1 0x1b                  -> Push JUMPDEST location
+    JUMPI                       -> If EQ is true go to JUMPDEST
+    INVALID                     -> End Execution (If line reached they were not authroized to destruct this contract)
+    JUMPDEST                    -> Came here from JUMP
+    PUSH20 [CONTRACT FACTORY]   -> Address to send funds to
+    SELFDESTRUCT                -> Delete contract code from the blockchain and send funds to previously pushed address and end execution
+    INVALID                     -> End execution if this line is reached there was an error
+
 ```
 
 ## Tests
 Run tests: `npx hardhat test`
 
-![image](https://user-images.githubusercontent.com/106453938/205175865-b6b83020-ef31-4b32-876f-65795e85e59b.png)
+![image](https://user-images.githubusercontent.com/106453938/205217581-16c8312c-668c-437c-88ae-2172df153f1c.png)
 
 ## Working with the repo:
 

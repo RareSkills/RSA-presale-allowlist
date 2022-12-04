@@ -4,13 +4,9 @@ import Crypto.Util.number
 from RSAOutput import output
 
 def generateKeys(bits, genExponent=False):
-	if not bits % 4 == 0:
-		# allows for generation of modulus in the correct format
-		raise Exception("Must specify a key size divisible by 4!")
-
 	# A 1024 bit modulus is the product of two 512 bit primes
 	# thus divide by 2 to get the bits needed for each prime
-	randPrimeBits = bits//2
+	randPrimeBits = bits // 2
 
 	# will keep looping until a p and q is chosen that has a satsifactory exponent value
 	while True:
@@ -60,9 +56,6 @@ def generateKeys(bits, genExponent=False):
 	with open('./crypto/d.txt', 'w') as f:
 		f.write(str(d))
 		f.close()
-
-	# convert to hex for display
-	n, e, d = hex(n), hex(e), hex(d)
 
 	# display RSA key data
 	output(n, e, d)

@@ -59,6 +59,11 @@ contract Rsa {
         );
     }
 
+    modifier onlyOwner() {
+        require(owner == msg.sender);
+        _;
+    }
+
     /**
      * @notice 'verifySignature' is the user facing function used to validate 
      *         signed messages.
@@ -167,13 +172,9 @@ contract Rsa {
         }
     }
 
-    modifier onlyOwner() {
-        require(owner == msg.sender);
-        _;
-    }
-
     /**
-     * @notice 'deployPublicKey' is used in initializing the contract that hold the RSA modulus (n)
+     * @notice 'deployPublicKey' is used in initializing the contract that holds
+     *         the RSA modulus (n)
      *
      * @dev See Repo README for guide to generating public key
      *
@@ -191,13 +192,13 @@ contract Rsa {
             publicKey
         );
 
-        //Code to be returned from metamorphic init callback. See README for full explanation
+        //Code to be returned from metamorphic init callback. See README for full explanation.
         currentImplementationCode = contractCode;
 
-        // load immutable variable into memory
+        // load immutable variable into memory.
         bytes memory metaMorphicInitCode = _metamorphicContractInitializationCode;
 
-        // Load immutable variable onto the stack
+        // Load immutable variable onto the stack.
         bytes32 _salt = salt;
 
         address deployedMetamorphicContract;
@@ -211,10 +212,10 @@ contract Rsa {
             )
         }
 
-        // Insure metamorphic deployment to address defines in constructor
+        // Insure metamorphic deployment to address calculated in constructor.
         require(
             deployedMetamorphicContract == metamorphicContractAddress,
-            "Failed to deploy the new metamorphic contract."
+            "Failed to deploy the new metamorphic contract to correct address."
         );
 
         emit Metamorphosed(deployedMetamorphicContract);
@@ -223,7 +224,7 @@ contract Rsa {
     /**
      * @notice 'destroyContract' must be called before redeployment of public key contract
      *
-     * @dev See Repo README for guide to generating public key
+     * @dev    See Repo README for deeper explaination of this process.
      *
      * https://github.com/RareSkills/RSA-presale-allowlist
      */
@@ -233,9 +234,10 @@ contract Rsa {
     }
 
     /**
-     * @notice 'callback19F236F3' is a critical step in the initialization of a metamorphic contract
+     * @notice 'callback19F236F3' is a critical step in the initialization of a 
+     *         metamorphic contract
      *
-     * @dev The function selector for this is '0x0000000e'
+     * @dev    The function selector for this is '0x0000000e'
      */
     function callback19F236F3() external view returns (bytes memory) {
         return currentImplementationCode;

@@ -6,7 +6,7 @@ For a detailed breakdown see Jeffrey Scholz's medium post [here](https://medium.
 It is a common practice in the cryptocurrency space to have sales for tokens to addresses than have been allowlisted (whitelisted) off-chain. Therefore, there must be a verification mechanism on-chain to validate these users to enable them to receive these tokens.
 
 #### Authors
-[Suthan Somadeva](https://www.linkedin.com/in/suthan-somadeva-434aa0242/) and Michael Burke
+[Suthan Somadeva](https://www.linkedin.com/in/suthan-somadeva-434aa0242/) and [Michael Burke](https://twitter.com/ThisIsMikeDB)
 
 #### Three common methods for doing so are (including gas costs of optimizer set to 1,000 runs):
 - storing the address in a mapping (Gas: 23,424) 
@@ -75,9 +75,9 @@ Our approach cuts out the need of having to deploy the implementation contract e
     PUSH4 0x0000000e                  -> push selector
     PUSH1 0x00                        -> store from beginning of memory
     MSTORE                            -> store using previous 2 arguments MSTORE(0x00, selector)
-    PUSH2 [uint16(0x73 + _modLength)] -> byte size of return data to copy (get only the 4 bytes of selector in memory)  
+    PUSH2 [uint16(0x73 + _modLength)] -> byte size of return data to copy 
     PUSH1 0x00                        -> where in memory to copy the return data
-    PUSH1 0x04                        -> size of calldata argument
+    PUSH1 0x04                        -> size of calldata argument (get only the 4 bytes of selector from memory)  
     PUSH1 0x1c                        -> where in memory to start copying the calldata arguments
     CALLER                            -> msg.sender (initiating contract)
     GAS                               -> forward all current gas

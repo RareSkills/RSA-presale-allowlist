@@ -5,6 +5,9 @@ For a detailed breakdown see Jeffrey Scholz's medium post [here](https://medium.
 
 It is a common practice in the cryptocurrency space to have sales for tokens to addresses than have been allowlisted (whitelisted) off-chain. Therefore, there must be a verification mechanism on-chain to validate these users to enable them to receive these tokens.
 
+#### Authors
+[Suthan Somadeva](https://www.linkedin.com/in/suthan-somadeva-434aa0242/) and Michael Burke
+
 #### Three common methods for doing so are (including gas costs of optimizer set to 1,000 runs):
 - storing the address in a mapping (Gas: 23,424) 
 - ECDSA Signature Verification (Gas: 29,293) 

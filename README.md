@@ -1,12 +1,12 @@
 # RSA-presale-allowlist
-This is a [RareSkills.io](https://RareSkills.io) project from the [Solidity Bootcamp](https://www.rareskills.io/web3-blockchain-bootcamps/solidity) to allowlist addresses far more efficiently than ECDSA or Merkle Trees.
+This is a [RareSkills.io](https://RareSkills.io) project from the [Solidity Bootcamp](https://www.rareskills.io/web3-blockchain-bootcamps-solidity) to allowlist addresses far more efficiently than ECDSA or Merkle Trees.
 
 For a detailed breakdown see Jeffrey Scholz's medium post [here](https://medium.com/donkeverse/hardcore-gas-savings-in-nft-minting-part-2-signatures-vs-merkle-trees-917c43c59b07)
 
 It is a common practice in the cryptocurrency space to have sales for tokens to addresses than have been allowlisted (whitelisted) off-chain. Therefore, there must be a verification mechanism on-chain to validate these users to enable them to receive these tokens.
 
 #### Authors
-[Suthan Somadeva](https://www.linkedin.com/in/suthan-somadeva-434aa0242/) and [Michael Burke](https://twitter.com/ThisIsMikeDB)
+[Suthan Somadeva](https://twitter.com/PeakyCryptos) and [Michael Burke](https://twitter.com/ThisIsMikeDB)
 
 #### Three common methods for doing so are (including gas costs of optimizer set to 1,000 runs):
 - storing the address in a mapping (Gas: 23,424) 

@@ -163,29 +163,32 @@ contract Rsa {
             }
 
             /**
-             * @dev Parse return value from modular exponentation calculation.
-             *      This calculation will load the correct 32bytes of memory
-             *      onto the stack.
+             * @dev Load the size of return data from executed call.
+             *      Return data of this call will always be a multiple of 32-bytes.
              */
-            let decodedSig := mload(add(0x60, sig.length))
+            let returnSize := returndatasize()
 
             /**
-             * @dev Use bit mask of decodedSig to ensure it is a valid address.
-             *      If the user has passed a valid sig, this will be a 20 byte
-             *      address, left padded to 32 bytes, and revert if not valid address.
+             * @dev Use bit mask on all leading 32-bytes to ensure values are zeroed out.
+             *      If a valid sig then only the last 20 bytes will contains non-zero bits.
              */
-            if iszero(
-                iszero(
-                    and(
-                        decodedSig,
-                        not(0xffffffffffffffffffffffffffffffffffffffff)
-                    )
-                )
-            ) {
-                revert(0, 0)
+            if returnSize {
+                let chunkstoCheck := div(returndatasize(), 0x20)
+
+                for { let i := 0 } lt(i, chunkstoCheck) { i := add(i, 0x20) }
+                {
+                    if  and(mload(add(0x80, i)), not(0x0))
+                    {
+                        revert(0, 0)
+                    }   
+                }
             }
 
-            // if msg.sender == decoded signature
+            /**
+             * @dev Decoded signature will always be contained in last 32-bytes.
+             *      If msg.sender == decoded signature then return true, else false.
+             */
+            let decodedSig := mload(add(0x60, sig.length))
             if eq(caller(), decodedSig) {
                 // Return true
                 mstore(0x00, 0x01)

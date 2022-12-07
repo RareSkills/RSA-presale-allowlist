@@ -17,10 +17,10 @@ The issues with the mapping is it is very expensive for the seller to store all 
 the current best known approach, ECSDA Signature Verification.
 
 #### Our approach:
-- RSA 896 bit Metamorphic  (Gas: 26,850)
-- RSA 960 bit Metamorphic  (Gas: 26,925)
-- RSA 1024 bit Metamorphic (Gas: 27,033)
-- RSA 2048 bit Metamorphic (Gas: 29,271) 
+- RSA 896 bit Metamorphic  (Gas: 26,943)
+- RSA 960 bit Metamorphic  (Gas: 27,018)
+- RSA 1024 bit Metamorphic (Gas: 27,126)
+- RSA 2048 bit Metamorphic (Gas: 29,364) 
 
 <hr>
 
@@ -109,7 +109,7 @@ Our approach cuts out the need of having to deploy the implementation contract e
 ## Tests
 Run tests: `npx hardhat test`
 
-![image](https://user-images.githubusercontent.com/106453938/206140387-30ab5e6f-2b7f-4bbe-9e64-ca30c179a5db.png)
+![image](https://user-images.githubusercontent.com/106453938/206142847-c2b54ed3-5ce4-4396-8e75-0ee04724aaef.png)
 
 ## Working with the repo:
 

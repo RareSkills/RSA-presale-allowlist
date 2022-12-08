@@ -162,30 +162,25 @@ contract Rsa {
                 revert(0, 0)
             }
 
-            /**
-             * @dev Parse return value from modular exponentation calculation.
-             *      This calculation will load the correct 32bytes of memory
-             *      onto the stack.
-             */
-            let decodedSig := mload(add(0x60, sig.length))
 
             /**
-             * @dev Use bit mask of decodedSig to ensure it is a valid address.
-             *      If the user has passed a valid sig, this will be a 20 byte
-             *      address, left padded to 32 bytes, and revert if not valid address.
+             * @dev Check all leading 32-byte chunk to ensure values are zeroed out.
+             *      If a valid sig then only the last 20 bytes will contains non-zero bits.
              */
-            if iszero(
-                iszero(
-                    and(
-                        decodedSig,
-                        not(0xffffffffffffffffffffffffffffffffffffffff)
-                    )
-                )
-            ) {
-                revert(0, 0)
+            let chunksToCheck := div(sig.length, 0x20)
+            for { let i := 1 } lt(i, chunksToCheck) { i := add(i, 1) }
+            {
+                if  mload(add(0x60, mul(i, 0x20)))
+                {
+                    revert(0, 0)
+                }   
             }
 
-            // if msg.sender == decoded signature
+            /**
+             * @dev Decoded signature will always be contained in last 32-bytes.
+             *      If msg.sender == decoded signature then return true, else false.
+             */
+            let decodedSig := mload(add(0x60, sig.length))
             if eq(caller(), decodedSig) {
                 // Return true
                 mstore(0x00, 0x01)

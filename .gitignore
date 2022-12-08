@@ -12,6 +12,8 @@ artifacts
 
 node_modules
 .env
+.pyc
+.txt
 coverage
 coverage.json
 typechain

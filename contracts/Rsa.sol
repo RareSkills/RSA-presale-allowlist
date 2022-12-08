@@ -162,26 +162,18 @@ contract Rsa {
                 revert(0, 0)
             }
 
-            /**
-             * @dev Load the size of return data from executed call.
-             *      Return data of this call will always be a multiple of 32-bytes.
-             */
-            let returnSize := returndatasize()
 
             /**
-             * @dev Check each 32-byte chunk to ensure values are zeroed out.
+             * @dev Check all leading 32-byte chunk to ensure values are zeroed out.
              *      If a valid sig then only the last 20 bytes will contains non-zero bits.
              */
-            if returnSize {
-                let chunkstoCheck := div(returndatasize(), 0x20)
-
-                for { let i := 0 } lt(i, chunkstoCheck) { i := add(i, 0x20) }
+            let chunksToCheck := div(sig.length, 0x20)
+            for { let i := 1 } lt(i, chunksToCheck) { i := add(i, 1) }
+            {
+                if  mload(add(0x60, mul(i, 0x20)))
                 {
-                    if  mload(add(0x80, i))
-                    {
-                        revert(0, 0)
-                    }   
-                }
+                    revert(0, 0)
+                }   
             }
 
             /**
